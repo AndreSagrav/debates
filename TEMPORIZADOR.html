@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tiempo Restante</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+
+  body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: #ecf0f1;
+  }
+  .columns-container {
+    display: flex;
+    flex-direction: column;
+    margin: 30px;
+    width: 65%;
+    position: relative;
+  }
+  .column-headers {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 0 0 20px 0;
+    border-bottom: 3px solid #8b4513;
+    background: linear-gradient(135deg, #5d4037 0%, #3e2723 100%);
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 15px rgba(139, 69, 19, 0.3);
+    position: relative;
+  }
+  .column-title {
+    width: 47%;
+    font-size: 32px;
+    font-weight: 800;
+    color: #f4f1e8;
+    text-align: center;
+    padding: 20px 15px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 1px;
+    background: rgba(244, 241, 232, 0.1);
+    border-radius: 8px;
+    margin: 10px;
+    border: 2px solid rgba(244, 241, 232, 0.2);
+    backdrop-filter: blur(10px);
+  }
+  
+  .arrow-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+  
+  .arrow {
+    width: 0;
+    height: 0;
+    border-top: 25px solid transparent;
+    border-bottom: 25px solid transparent;
+    border-left: 35px solid #d4a574;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.4));
+    position: relative;
+  }
+  
+  .arrow::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -55px;
+    width: 20px;
+    height: 16px;
+    background-color: #d4a574;
+    border-radius: 2px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+    height: 44px;
+  }
+  .text-container {
+    width: 47%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .text-box {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 18px;
+    border: 1px solid #6d4c41;
+    border-radius: 6px;
+    overflow-y: auto;
+    height: 32px;
+    max-height: 32px;
+    font-family: inherit;
+    line-height: 1.2;
+    box-sizing: border-box;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    background: #f5f5dc;
+    color: #3e2723;
+    outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  .text-box:focus {
+    border-color: #8b4513;
+    box-shadow: 0 0 5px rgba(139, 69, 19, 0.4);
+  }
+  
+  .text-box:empty:before {
+    content: attr(data-placeholder);
+    color: #8d6e63;
+    font-style: italic;
+  }
+  .checkbox-for-text {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #8b4513;
+    flex-shrink: 0;
+  }
+  .remove-btn {
+    position: absolute;
+    top: 6px;
+    right: -35px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 10;
+  }
+  .remove-btn:hover {
+    background-color: #c82333;
+  }
+  .text-box.completed {
+    text-decoration: line-through !important;
+    text-decoration-color: #5d4037 !important;
+    text-decoration-thickness: 2px !important;
+    color: #8d6e63 !important;
+    background-color: #efebe9 !important;
+    opacity: 0.7;
+  }
+  #addRowBtn {
+    margin-top: 15px;
+    padding: 8px 16px;
+    font-size: 16px;
+    border: none;
+    background-color: #6d4c41;
+    color: #f5f5dc;
+    border-radius: 5px;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: background 0.3s;
+  }
+  #addRowBtn:hover {
+    background-color: #5d4037;
+  }
+  .timer-container {
+    background: #37474f;
+    border: 2px solid #8b4513;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 320px;
+    text-align: center;
+    align-self: flex-start;
+  }
+  .timer-container h1 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    color: #f5f5dc;
+  }
+  .inputs {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+  .inputs input[type=number] {
+    width: 60px;
+    font-size: 18px;
+    text-align: center;
+    border: 1px solid #8b4513;
+    border-radius: 4px;
+    padding: 4px;
+    background: #f5f5dc;
+    color: #3e2723;
+  }
+  .inputs label {
+    color: #f5f5dc;
+    font-weight: 600;
+  }
+  #display {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #d4a574;
+    font-weight: 600;
+  }
+  button {
+    font-size: 16px;
+    margin: 5px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  #startBtn { background: #558b2f; color: #fff; }
+  #startBtn:hover { background: #33691e; }
+  #pauseBtn { background: #f57c00; color: #fff; }
+  #pauseBtn:hover { background: #ef6c00; }
+  #resetBtn { background: #8b4513; color: #fff; }
+  #resetBtn:hover { background: #6d4c41; }
+
+  /* Área de notas */
+  .note-container {
+    margin-top: 15px;
+    text-align: left;
+  }
+  .note-container h2 {
+    font-size: 18px;
+    color: #f5f5dc;
+    margin-bottom: 8px;
+  }
+  #noteArea {
+    width: 100%;
+    height: 120px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #8b4513;
+    border-radius: 6px;
+    resize: vertical;
+    background: #f5f5dc;
+    color: #3e2723;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+<div class="columns-container">
+  <div class="column-headers">
+    <div class="column-title">Columna A</div>
+    <div class="arrow-container">
+      <div class="arrow"></div>
+    </div>
+    <div class="column-title">Columna B</div>
+  </div>
+  <div id="rowsContainer">
+    <div class="row">
+      <div class="text-container">
+        <input type="checkbox" class="checkbox-for-text" onchange="toggleTextCompletion(this)">
+        <div class="text-box" contenteditable="true" data-placeholder="Escribe aquí..."></div>
+      </div>
+      <div class="text-container">
+        <input type="checkbox" class="checkbox-for-text" onchange="toggleTextCompletion(this)">
+        <div class="text-box" contenteditable="true" data-placeholder="Escribe aquí..."></div>
+      </div>
+      <button class="remove-btn" onclick="removeRow(this)">&times;</button>
+    </div>
+  </div>
+  <button id="addRowBtn">Agregar fila</button>
+</div>
+<div class="timer-container">
+  <h1>Tiempo Restante</h1>
+  <div class="inputs">
+    <div>
+      <label for="inputMinutes">Min:</label>
+      <input type="number" id="inputMinutes" min="0" value="3" />
+    </div>
+    <div>
+      <label for="inputSeconds">Seg:</label>
+      <input type="number" id="inputSeconds" min="0" max="59" value="0" />
+    </div>
+  </div>
+  <div id="display">03:00</div>
+  <button id="startBtn">Iniciar</button>
+  <button id="pauseBtn" disabled>Pausar</button>
+  <button id="resetBtn">Reiniciar</button>
+
+  <!-- Área de notas -->
+  <div class="note-container">
+    <h2>Notas</h2>
+    <textarea id="noteArea" placeholder="Escribe tus notas aquí..."></textarea>
+  </div>
+</div>
+
+<script>
+  let tiempoSegundos = 0;
+  let intervalo = null;
+  const display = document.getElementById('display');
+  const inputMinutes = document.getElementById('inputMinutes');
+  const inputSeconds = document.getElementById('inputSeconds');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const noteArea = document.getElementById('noteArea');
+
+  function toggleTextCompletion(checkbox) {
+    const textBox = checkbox.nextElementSibling;
+    if (checkbox.checked) {
+      textBox.classList.add('completed');
+    } else {
+      textBox.classList.remove('completed');
+    }
+  }
+
+  function actualizarDisplay() {
+    const minutos = Math.floor(tiempoSegundos / 60);
+    const segundos = tiempoSegundos % 60;
+    display.textContent =
+      (minutos < 10 ? '0' + minutos : minutos) + ':' +
+      (segundos < 10 ? '0' + segundos : segundos);
+  }
+
+  function iniciarTemporizador() {
+    if (intervalo) return;
+    const mins = parseInt(inputMinutes.value, 10) || 0;
+    const secs = parseInt(inputSeconds.value, 10) || 0;
+    tiempoSegundos = mins * 60 + secs;
+    if (tiempoSegundos <= 0) {
+      alert('Ingresa un tiempo mayor a 0.');
+      return;
+    }
+    actualizarDisplay();
+    intervalo = setInterval(() => {
+      if (tiempoSegundos > 0) {
+        tiempoSegundos--;
+        actualizarDisplay();
+      } else {
+        clearInterval(intervalo);
+        intervalo = null;
+        alert('¡Tiempo terminado!');
+        pauseBtn.disabled = true;
+        startBtn.disabled = false;
+        inputMinutes.disabled = false;
+        inputSeconds.disabled = false;
+      }
+    }, 1000);
+    startBtn.disabled = true;
+    pauseBtn.disabled = false;
+    inputMinutes.disabled = true;
+    inputSeconds.disabled = true;
+  }
+
+  function pausarTemporizador() {
+    if (intervalo) {
+      clearInterval(intervalo);
+      intervalo = null;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      inputMinutes.disabled = false;
+      inputSeconds.disabled = false;
+    }
+  }
+
+  function reiniciarTemporizador() {
+    pausarTemporizador();
+    const mins = parseInt(inputMinutes.value, 10) || 0;
+    const secs = parseInt(inputSeconds.value, 10) || 0;
+    tiempoSegundos = mins * 60 + secs;
+    actualizarDisplay();
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
+    inputMinutes.disabled = false;
+    inputSeconds.disabled = false;
+  }
+
+  function removeRow(button) {
+    const row = button.parentNode;
+    row.remove();
+  }
+
+  // Guardar notas en localStorage
+  noteArea.addEventListener('input', () => {
+    localStorage.setItem('notas', noteArea.value);
+  });
+
+  // Cargar notas guardadas
+  window.addEventListener('load', () => {
+    const notasGuardadas = localStorage.getItem('notas');
+    if (notasGuardadas) {
+      noteArea.value = notasGuardadas;
+    }
+  });
+
+  startBtn.addEventListener('click', iniciarTemporizador);
+  pauseBtn.addEventListener('click', pausarTemporizador);
+  resetBtn.addEventListener('click', reiniciarTemporizador);
+
+  document.getElementById('addRowBtn').addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <div class="text-container">
+        <input type="checkbox" class="checkbox-for-text" onchange="toggleTextCompletion(this)">
+        <div class="text-box" contenteditable="true" data-placeholder="Escribe aquí..."></div>
+      </div>
+      <div class="text-container">
+        <input type="checkbox" class="checkbox-for-text" onchange="toggleTextCompletion(this)">
+        <div class="text-box" contenteditable="true" data-placeholder="Escribe aquí..."></div>
+      </div>
+      <button class="remove-btn" onclick="removeRow(this)">&times;</button>
+    `;
+    document.getElementById('rowsContainer').appendChild(row);
+  });
+
+  reiniciarTemporizador();
+</script>
+</body>
+</html>
