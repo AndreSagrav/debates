@@ -1118,14 +1118,25 @@ function qRoulette(questions, finalQ){
     return;
   }
 
-  var pool = (questions && questions.length > 0) ? questions.slice() : [
-    '¿Cuál es la tesis central del tema a debatir?',
-    '¿Qué evidencias fundamentan la posición?',
-    '¿Cómo responde la contraparte ante las objeciones?',
-    '¿Cuál es la conclusión y análisis principal?'
+  // Generamos un pool variado para que la ruleta siempre gire visualmente con variedad, incluso si solo hay 1 pregunta de refuerzo
+  var dummyTeasers = [
+    '¿Cuál es el argumento central de esta tesis?',
+    '¿Qué evidencias científicas y datos respaldan la postura?',
+    '¿Cómo responde la contraparte a esta refutación?',
+    '¿Cuál es la conclusión principal de este debate?',
+    'Profundización conceptual: Análisis crítico del argumento',
+    'Pregunta de refuerzo: Justificación de premisas'
   ];
+
+  var pool = [];
+  if(questions && questions.length > 1){
+    pool = questions.slice();
+  } else if(questions && questions.length === 1){
+    pool = [questions[0]].concat(dummyTeasers);
+  } else {
+    pool = dummyTeasers.slice();
+  }
   if(finalQ && pool.indexOf(finalQ) === -1) pool.push(finalQ);
-  while(pool.length < 4) pool = pool.concat(pool);
 
   if(band) band.classList.add('spinning-band');
   el.style.opacity = '1';
