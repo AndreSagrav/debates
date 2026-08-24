@@ -807,24 +807,32 @@ var _supabaseTimer = null;
 var _isRemoteUpdate = false;
 
 function initSupabase(key){
-  if(!key) key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_KEY;
+  var savedKey = null;
+  try { savedKey = localStorage.getItem('supabase_anon_key'); } catch(e){}
+  if(!key){
+    if(savedKey && savedKey.indexOf('hexrnglihkebatlshzmg') !== -1){
+      key = savedKey;
+    } else {
+      key = DEFAULT_SUPABASE_KEY;
+      try { localStorage.setItem('supabase_anon_key', key); } catch(e){}
+    }
+  }
   var statusText = document.getElementById('supabaseStatusText');
   var btn = document.getElementById('supabaseBtn');
   var keyInput = document.getElementById('supabaseKeyInput');
   if(keyInput && key) keyInput.value = key;
-  if(!key){
-    if(statusText) statusText.textContent = 'Sin clave anon configurada.';
-    if(btn){ btn.textContent = '☁️ Supabase'; btn.style.borderColor = 'var(--a)'; btn.style.color = 'var(--a)'; }
-    return false;
-  }
   if(window.supabase && typeof window.supabase.createClient === 'function'){
     try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, key);
-      localStorage.setItem('supabase_anon_key', key);
+      try { localStorage.setItem('supabase_anon_key', key); } catch(e){}
       if(statusText) statusText.textContent = '✅ Conectado a ' + SUPABASE_URL;
       if(btn){ btn.textContent = '☁️ Nube Activa'; btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)'; }
       subscribeSupabaseRealtime();
       loadFromSupabase();
+      // Si tenemos datos locales y Supabase está conectado, guardar inmediatamente
+      if(S.participants.length > 0 || S.questions.length > 0){
+        saveToSupabase();
+      }
       return true;
     } catch(e) {
       if(statusText) statusText.textContent = '❌ Error de conexión: ' + e.message;
@@ -848,9 +856,13 @@ function saveToSupabase(){
       updated_at: new Date().toISOString()
     };
     supabaseClient.from('debate_state').upsert(payload).then(function(res){
-      if(res.error){ console.warn('Supabase sync error:', res.error); }
+      if(res.error){
+        console.warn('Supabase sync error:', res.error);
+      } else {
+        console.log('✅ Guardado en Supabase con éxito');
+      }
     });
-  }, 400);
+  }, 250);
 }
 
 function loadFromSupabase(){

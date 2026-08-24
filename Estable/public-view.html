@@ -1315,13 +1315,27 @@ if(window.supabase){
   try {
     var supabaseClient = window.supabase.createClient(SUPABASE_URL, DEFAULT_SUPABASE_KEY);
     supabaseClient.channel('universal_public')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'debate_state', filter: 'id=eq.default' }, function(payload){
-        if(payload.new && payload.new.state){
-          if(payload.new.state.activeMode) switchWidgetMode(payload.new.state.activeMode);
-          apply(payload.new.state);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state', filter: 'id=eq.default' }, function(payload){
+        if(payload.new){
+          var st = payload.new.data || payload.new.state;
+          if(st){
+            if(st.activeMode) switchWidgetMode(st.activeMode);
+            apply(st);
+          }
         }
       })
       .subscribe();
+
+    // Carga inicial directa de Supabase
+    supabaseClient.from('debate_state').select('*').eq('id', 'default').single().then(function(res){
+      if(res.data){
+        var st = res.data.data || res.data.state;
+        if(st){
+          if(st.activeMode) switchWidgetMode(st.activeMode);
+          apply(st);
+        }
+      }
+    });
   } catch(e){}
 }
 
