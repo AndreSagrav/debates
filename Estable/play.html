@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Quiz — Unirse al Juego</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --card: #181b20;
+    --border: #2a2e38;
+    --ink: #e8ecf5;
+    --ink-dim: #8a92a6;
+    --red: #e63946;
+    --blue: #3a86ef;
+    --yellow: #f4a261;
+    --green: #2a9d8f;
+    --accent-green: #00e676;
+    --accent-red: #ff5252;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 440px;
+    height: 100%;
+    padding: 24px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn .3s ease;
+  }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* JOIN SCREEN */
+  .brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 38px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff 0%, var(--blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subbrand { font-size: 14px; color: var(--ink-dim); margin-bottom: 32px; }
+  .join-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-dim); }
+  .join-input {
+    width: 100%;
+    padding: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    background: #111317;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: #fff;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .join-input:focus { border-color: var(--blue); }
+  .join-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #3a86ef, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .1s, opacity .2s;
+    box-shadow: 0 4px 15px rgba(58,134,239,.4);
+    margin-top: 8px;
+  }
+  .join-btn:active { transform: scale(.98); }
+  .err-msg { font-size: 12px; color: var(--accent-red); text-align: center; min-height: 18px; }
+
+  /* LOBBY SCREEN */
+  .lobby-icon { font-size: 56px; margin-bottom: 16px; animation: pulse 1.5s infinite ease-in-out; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  .lobby-title { font-family: 'DM Serif Display', serif; font-size: 26px; text-align: center; margin-bottom: 8px; }
+  .lobby-player { font-size: 18px; font-weight: 700; color: var(--blue); background: rgba(58,134,239,.12); padding: 8px 18px; border-radius: 99px; margin-bottom: 24px; border: 1px solid rgba(58,134,239,.3); }
+
+  /* QUESTION SCREEN */
+  .q-timer-bar { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 16px; }
+  .q-timer-fill { height: 100%; background: var(--blue); width: 100%; transition: width 1s linear, background .3s; }
+  .q-info { display: flex; justify-content: space-between; width: 100%; font-size: 12px; font-weight: 700; color: var(--ink-dim); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    flex: 1;
+    max-height: 380px;
+  }
+  .opt-btn {
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform .1s, opacity .2s;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+  }
+  .opt-btn:active { transform: scale(.95); }
+  .opt-btn.red { background: linear-gradient(135deg, #e63946, #c1121f); }
+  .opt-btn.blue { background: linear-gradient(135deg, #3a86ef, #1d4ed8); }
+  .opt-btn.yellow { background: linear-gradient(135deg, #f4a261, #e76f51); }
+  .opt-btn.green { background: linear-gradient(135deg, #2a9d8f, #1b4332); }
+  .opt-symbol { font-size: 32px; }
+
+  /* SUBMITTED / WAIT SCREEN */
+  .submitted-card { text-align: center; background: var(--card); padding: 32px 24px; border-radius: 20px; border: 1px solid var(--border); width: 100%; }
+
+  /* FEEDBACK SCREEN */
+  .fb-card {
+    width: 100%;
+    padding: 36px 24px;
+    border-radius: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .fb-card.correct { background: linear-gradient(135deg, rgba(0,230,118,.15), rgba(0,230,118,.05)); border: 2px solid var(--accent-green); }
+  .fb-card.incorrect { background: linear-gradient(135deg, rgba(255,82,82,.15), rgba(255,82,82,.05)); border: 2px solid var(--accent-red); }
+  .fb-icon { font-size: 64px; }
+  .fb-title { font-family: 'DM Serif Display', serif; font-size: 32px; }
+  .fb-pts { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<!-- 1. JOIN SCREEN -->
+<div class="screen active" id="joinScreen">
+  <div class="brand">Quiz Live</div>
+  <div class="subbrand">Ingresa el PIN para unirte a la partida</div>
+  <div class="join-card">
+    <div class="form-group">
+      <label>PIN de la sala</label>
+      <input type="number" id="pinInput" class="join-input" placeholder="0000" maxlength="4"/>
+    </div>
+    <div class="form-group">
+      <label>Tu Nombre / Apodo</label>
+      <input type="text" id="nameInput" class="join-input" placeholder="Ej. Carlos" maxlength="15"/>
+    </div>
+    <div class="err-msg" id="joinErrMsg"></div>
+    <button class="join-btn" id="joinBtn">¡Unirme al Juego!</button>
+  </div>
+</div>
+
+<!-- 2. LOBBY SCREEN -->
+<div class="screen" id="lobbyScreen">
+  <div class="lobby-icon">🎮</div>
+  <div class="lobby-title">¡Estás dentro!</div>
+  <div class="lobby-player" id="lobbyPlayerName">Jugador</div>
+  <div style="font-size:14px;color:var(--ink-dim);text-align:center;">Mira la pantalla del profesor.<br>El juego comenzará en breve.</div>
+</div>
+
+<!-- 3. QUESTION SCREEN -->
+<div class="screen" id="questionScreen">
+  <div class="q-timer-bar"><div class="q-timer-fill" id="timerFill"></div></div>
+  <div class="q-info">
+    <span id="qNumText">Pregunta 1</span>
+    <span id="scoreText">0 pts</span>
+  </div>
+  <div class="options-grid">
+    <button class="opt-btn red" data-opt="0"><span class="opt-symbol">▲</span><span>A</span></button>
+    <button class="opt-btn blue" data-opt="1"><span class="opt-symbol">◆</span><span>B</span></button>
+    <button class="opt-btn yellow" data-opt="2"><span class="opt-symbol">●</span><span>C</span></button>
+    <button class="opt-btn green" data-opt="3"><span class="opt-symbol">■</span><span>D</span></button>
+  </div>
+</div>
+
+<!-- 4. SUBMITTED SCREEN -->
+<div class="screen" id="submittedScreen">
+  <div class="submitted-card">
+    <div style="font-size:48px;margin-bottom:12px;">👍</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:8px;">¡Respuesta enviada!</div>
+    <div style="font-size:14px;color:var(--ink-dim);">Esperando a que termine el tiempo...</div>
+  </div>
+</div>
+
+<!-- 5. FEEDBACK SCREEN -->
+<div class="screen" id="feedbackScreen">
+  <div class="fb-card" id="fbCard">
+    <div class="fb-icon" id="fbIcon">🎉</div>
+    <div class="fb-title" id="fbTitle">¡Correcto!</div>
+    <div class="fb-pts" id="fbPts">+950 pts</div>
+    <div style="font-size:14px;color:var(--ink-dim);" id="fbSubText">Puntaje Total: 950 pts</div>
+  </div>
+</div>
+
+<!-- 6. FINAL SCREEN -->
+<div class="screen" id="finalScreen">
+  <div style="font-size:56px;margin-bottom:8px;">🏆</div>
+  <div style="font-family:'DM Serif Display',serif;font-size:32px;margin-bottom:8px;">¡Juego Terminado!</div>
+  <div style="font-size:18px;font-weight:700;color:var(--blue);margin-bottom:16px;" id="finalRankText">Posición #1</div>
+  <div style="font-size:24px;font-family:'DM Mono',monospace;font-weight:700;" id="finalScoreText">Total: 0 pts</div>
+</div>
+
+<script>
+var SUPABASE_URL = 'https://ksakdjvdqspzwjslzlnb.supabase.co';
+var DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWtkanZkcXNwendqc2x6bG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzUzNjAsImV4cCI6MjEwMTQxMTM2MH0.vWm1Fto7FY8h12xspDgXjn1jOwYY8FzUEmWrP_DOmhA';
+
+var supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, DEFAULT_SUPABASE_KEY) : null;
+var activeSession = null;
+var playerName = '';
+var currentScore = 0;
+var hasAnswered = false;
+var questionStartTime = null;
+var timerInterval = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var target = document.getElementById(id);
+  if(target) target.classList.add('active');
+}
+
+/* JOIN HANDLER */
+document.getElementById('joinBtn').addEventListener('click', function(){
+  var pin = document.getElementById('pinInput').value.trim();
+  var name = document.getElementById('nameInput').value.trim();
+  var errEl = document.getElementById('joinErrMsg');
+  errEl.textContent = '';
+
+  if(!pin || pin.length < 4){ errEl.textContent = 'Ingresa un PIN válido de 4 dígitos.'; return; }
+  if(!name){ errEl.textContent = 'Ingresa tu nombre o apodo.'; return; }
+  
+  var localChannel = null;
+
+  function connectToSession(sess, mode){
+    activeSession = sess;
+    playerName = name;
+    var players = activeSession.players || [];
+    var existing = players.find(function(p){ return p.name.toLowerCase() === name.toLowerCase(); });
+    if(!existing){
+      players.push({ name: name, score: 0 });
+      activeSession.players = players;
+      saveSessionState();
+    } else {
+      currentScore = existing.score || 0;
+    }
+
+    if(window.BroadcastChannel){
+      if(localChannel) localChannel.close();
+      localChannel = new BroadcastChannel('quiz_channel_' + pin);
+      localChannel.onmessage = function(e){
+        if(e.data && e.data.type === 'SESSION_UPDATE'){
+          activeSession = Object.assign({}, activeSession, e.data.session);
+          handleSessionUpdate(activeSession);
+        }
+      };
+    }
+
+    document.getElementById('lobbyPlayerName').textContent = name;
+    showScreen('lobbyScreen');
+    subscribeToSession();
+  }
+
+  function saveSessionState(){
+    if(!activeSession) return;
+    try { localStorage.setItem('quiz_game_' + pin, JSON.stringify(activeSession)); } catch(e){}
+    if(localChannel) localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession });
+    if(supabaseClient && pin){
+      supabaseClient.from('debate_state').upsert({ id: 'quiz_' + pin, state: activeSession }).then(function(){});
+    }
+  }
+
+  // 1. Intentar buscar en localStorage (0ms)
+  var localSess = null;
+  try {
+    var raw = localStorage.getItem('quiz_game_' + pin);
+    if(raw) localSess = JSON.parse(raw);
+  } catch(e){}
+
+  if(localSess){
+    connectToSession(localSess, 'local');
+    return;
+  }
+
+  // 2. Buscar en Supabase 'debate_state'
+  if(supabaseClient){
+    supabaseClient.from('debate_state').select('*').eq('id', 'quiz_' + pin).single().then(function(res){
+      if(!res.error && res.data && res.data.state){
+        connectToSession(res.data.state, 'supabase');
+      } else {
+        errEl.textContent = 'No se encontró ninguna partida activa con el PIN ' + pin;
+      }
+    });
+  } else {
+    errEl.textContent = 'No se encontró ninguna partida activa con el PIN ' + pin;
+  }
+});
+
+/* SUSCRIPCIÓN EN TIEMPO REAL */
+function subscribeToSession(){
+  if(!supabaseClient || !activeSession || !activeSession.pin) return;
+  var dbKey = 'quiz_' + activeSession.pin;
+  supabaseClient.channel('play_quiz_' + activeSession.pin)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'debate_state', filter: 'id=eq.' + dbKey }, function(payload){
+      if(payload.new && payload.new.state){
+        activeSession = Object.assign({}, activeSession, payload.new.state);
+        handleSessionUpdate(activeSession);
+      }
+    })
+    .subscribe();
+}
+
+var lastChosenOpt = null;
+
+function handleSessionUpdate(session){
+  activeSession = session;
+  var status = session.status;
+  
+  if(status === 'lobby'){
+    showScreen('lobbyScreen');
+  } else if(status === 'question'){
+    startQuestion(session);
+  } else if(status === 'results'){
+    showFeedback(session);
+  } else if(status === 'finished'){
+    showFinalResults(session);
+  }
+}
+
+function startQuestion(session){
+  hasAnswered = false;
+  lastChosenOpt = null;
+  questionStartTime = session.question_start ? new Date(session.question_start) : new Date();
+  var qIdx = session.current_question || 0;
+  document.getElementById('qNumText').textContent = 'Pregunta ' + (qIdx + 1);
+  document.getElementById('scoreText').textContent = currentScore + ' pts';
+  
+  // Animación barra de tiempo
+  var fill = document.getElementById('timerFill');
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  setTimeout(function(){
+    fill.style.transition = 'width 20s linear';
+    fill.style.width = '0%';
+  }, 50);
+
+  showScreen('questionScreen');
+}
+
+/* RESPONDER OPCIÓN */
+document.querySelectorAll('.opt-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    if(hasAnswered || !activeSession) return;
+    hasAnswered = true;
+    lastChosenOpt = parseInt(btn.dataset.opt);
+    
+    var now = new Date();
+    var elapsedSec = Math.max(0, (now - questionStartTime) / 1000);
+    var qIdx = activeSession.current_question || 0;
+    var q = activeSession.questions ? activeSession.questions[qIdx] : null;
+    var correctIdx = q ? parseInt(q.correct || 0) : 0;
+    var isCorrect = (lastChosenOpt === correctIdx);
+    var speedBonus = isCorrect ? Math.max(200, 1000 - Math.floor(elapsedSec * 40)) : 0;
+
+    btn.style.transform = 'scale(0.92)';
+    
+    // Guardar respuesta y actualizar puntaje
+    if(isCorrect){
+      currentScore += speedBonus;
+      var p = (activeSession.players || []).find(function(x){ return x.name.toLowerCase() === playerName.toLowerCase(); });
+      if(p) p.score = currentScore;
+    }
+
+    // Broadcast a la pantalla del admin
+    if(window.BroadcastChannel){
+      try {
+        var ch = new BroadcastChannel('quiz_channel_' + activeSession.pin);
+        ch.postMessage({
+          type: 'ANSWER_SUBMIT',
+          response: { player_name: playerName, question_index: qIdx, answer_index: lastChosenOpt, is_correct: isCorrect, points: speedBonus }
+        });
+      } catch(e){}
+    }
+
+    showScreen('submittedScreen');
+  });
+});
+
+function showFeedback(session){
+  var qIdx = session.current_question || 0;
+  var questions = session.questions || [];
+  var currentQ = questions[qIdx];
+  if(!currentQ){ showScreen('lobbyScreen'); return; }
+
+  var card = document.getElementById('fbCard');
+  var icon = document.getElementById('fbIcon');
+  var title = document.getElementById('fbTitle');
+  var pts = document.getElementById('fbPts');
+  var sub = document.getElementById('fbSubText');
+
+  var correctIdx = parseInt(currentQ.correct || 0);
+  var isCorrect = (lastChosenOpt === correctIdx);
+
+  if(isCorrect){
+    card.className = 'fb-card correct';
+    icon.textContent = '🎉';
+    title.textContent = '¡Correcto!';
+    pts.textContent = 'Puntaje Actual';
+    sub.textContent = 'Puntaje Total: ' + currentScore + ' pts';
+  } else {
+    card.className = 'fb-card incorrect';
+    icon.textContent = '❌';
+    title.textContent = 'Incorrecto';
+    pts.textContent = '+0 pts';
+    var optLetters = ['A (▲)', 'B (◆)', 'C (●)', 'D (■)'];
+    sub.textContent = 'Respuesta correcta: ' + (optLetters[correctIdx] || '');
+  }
+  showScreen('feedbackScreen');
+}
+
+function showFinalResults(session){
+  var players = (session.players || []).slice();
+  players.sort(function(a,b){ return (b.score||0) - (a.score||0); });
+  
+  var myRank = players.findIndex(function(p){ return p.name.toLowerCase() === playerName.toLowerCase(); }) + 1;
+  if(myRank <= 0) myRank = 1;
+
+  document.getElementById('finalRankText').textContent = 'Posición #' + myRank + ' de ' + players.length;
+  document.getElementById('finalScoreText').textContent = 'Total: ' + currentScore + ' pts';
+  showScreen('finalScreen');
+}
+</script>
+</body>
+</html>

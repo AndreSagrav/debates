@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>100 Dijeron — Panel del Tutor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👥</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-games.css"/>
+<style>
+:root{--bg:#1a0408;--surface:#2d080f;--s2:#3d0c15;--border:#5c1422;--rose:#f43f5e;--gold:#ffd700;--ink:#fce8ec;--ink-dim:#a8606e;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
+header{background:#24050b;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+.h-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--rose);display:flex;align-items:center;gap:8px;}
+.btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink);transition:all .2s;font-family:'DM Sans',sans-serif;}
+.btn:hover{border-color:var(--rose);color:var(--rose);}
+.btn-rose{background:linear-gradient(135deg,#f43f5e,#be123c);color:#fff;border:none;font-weight:700;}
+.container{display:grid;grid-template-columns:1fr 320px;height:calc(100vh - 52px);overflow:hidden;}
+.main-col{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;}
+.side-col{background:var(--surface);border-left:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.card-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);}
+
+/* Answers Grid */
+.answers-grid{display:flex;flex-direction:column;gap:8px;}
+.ans-row{display:flex;align-items:center;gap:12px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;cursor:pointer;transition:all .2s;}
+.ans-row:hover{border-color:var(--rose);}
+.ans-num{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--rose);width:24px;}
+.ans-text{flex:1;font-size:15px;font-weight:600;}
+.ans-pts{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--gold);}
+.ans-row.hidden .ans-text{color:var(--ink-dim);font-style:italic;}
+.ans-row.hidden .ans-pts{display:none;}
+
+/* Strikes */
+.strikes-bar{display:flex;gap:12px;justify-content:center;margin-top:10px;}
+.strike-btn{width:50px;height:50px;border-radius:10px;border:2px solid var(--border);background:var(--s2);color:var(--ink-dim);font-size:24px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.strike-btn.active{background:rgba(244,63,94,.2);border-color:var(--rose);color:var(--rose);animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+</style>
+</head>
+<div class="games-menu-overlay" id="gamesOverlay"></div>
+
+<header>
+  <div class="h-title">👥 100 Estudiantes Dijeron</div>
+  <div>
+    <div style="position:relative; z-index:9999;">
+      <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
+      <div class="games-menu" id="gamesMenu">
+        <div class="games-menu-header">
+          <span class="games-menu-title">🎮 Zona de Juegos</span>
+          <button class="games-menu-mute" id="gamesMuteBtn" title="Sonido activado">🔊</button>
+        </div>
+        <a class="game-card debates" href="index.html">
+          <div class="game-icon">🎤</div>
+          <div class="game-info"><span class="game-name">Debates / Repaso</span><span class="game-desc">Panel de ruleta y preguntas</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <div class="games-sep"></div>
+        <a class="game-card quiz" href="quiz-admin.html">
+          <div class="game-icon">🎯</div>
+          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card jeopardy" href="jeopardy-admin.html">
+          <div class="game-icon">🏆</div>
+          <div class="game-info"><span class="game-name">Jeopardy</span><span class="game-desc">Tablero de categorías y valores</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card millonario" href="millonario-admin.html">
+          <div class="game-icon">💰</div>
+          <div class="game-info"><span class="game-name">Millonario</span><span class="game-desc">¿Quién quiere ser millonario?</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card ruleta" href="ruleta-admin.html">
+          <div class="game-icon">🛞</div>
+          <div class="game-info"><span class="game-name">Ruleta de Letras</span><span class="game-desc">Adivina la palabra oculta</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card dijeron" href="dijeron-admin.html">
+          <div class="game-icon">👥</div>
+          <div class="game-info"><span class="game-name">100 Dijeron</span><span class="game-desc">Family Feud educativo</span></div>
+          <span class="game-badge active">Activo</span>
+        </a>
+        <a class="game-card batalla" href="batalla-admin.html">
+          <div class="game-icon">⚔️</div>
+          <div class="game-info"><span class="game-name">Batalla</span><span class="game-desc">Equipos en tiempo real</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="container">
+  <div class="main-col">
+    <div class="card">
+      <div class="card-title" id="qTitle">Pregunta: ¿Qué lleva un estudiante a clase?</div>
+      <div class="answers-grid" id="answersGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="text-align:center;">❌ Strikes (Errores)</div>
+      <div class="strikes-bar">
+        <button class="strike-btn" id="s1">✕</button>
+        <button class="strike-btn" id="s2">✕</button>
+        <button class="strike-btn" id="s3">✕</button>
+      </div>
+    </div>
+  </div>
+  <div class="side-col">
+    <div class="card">
+      <div class="card-title">📝 Creador de Encuesta</div>
+      <input type="text" id="qInput" placeholder="Pregunta de la encuesta..." style="padding:8px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--ink);"/>
+      <div style="font-size:11px;color:var(--ink-dim);margin-top:4px;">Respuestas y Puntos:</div>
+      <div id="answersInputs" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button class="btn btn-rose" id="loadSurveyBtn" style="margin-top:6px;">Cargar Encuesta</button>
+    </div>
+  </div>
+</div>
+<script src="shared-games.js"></script>
+<script>
+var survey = {
+  question: '¿Qué lleva un estudiante a clase?',
+  answers: [
+    {text: 'Cuaderno / Libreta', pts: 35, revealed: false},
+    {text: 'Lapicero / Lápiz', pts: 28, revealed: false},
+    {text: 'Mochila / Bulto', pts: 18, revealed: false},
+    {text: 'Celular', pts: 12, revealed: false},
+    {text: 'Botella de agua', pts: 7, revealed: false}
+  ],
+  strikes: 0
+};
+
+function renderAnswers(){
+  document.getElementById('qTitle').textContent = 'Pregunta: ' + survey.question;
+  var grid = document.getElementById('answersGrid'); grid.innerHTML = '';
+  survey.answers.forEach(function(ans, i){
+    var row = document.createElement('div');
+    row.className = 'ans-row' + (ans.revealed ? '' : ' hidden');
+    row.innerHTML = '<span class="ans-num">'+(i+1)+'</span>'
+      +'<span class="ans-text">'+(ans.revealed ? ans.text : '••••••••••••••••••••')+'</span>'
+      +'<span class="ans-pts">'+ans.pts+'</span>';
+    row.addEventListener('click', function(){
+      ans.revealed = !ans.revealed;
+      if(ans.revealed) GameEngine.sfx.correct();
+      renderAnswers();
+    });
+    grid.appendChild(row);
+  });
+}
+
+function renderInputs(){
+  var container = document.getElementById('answersInputs'); container.innerHTML = '';
+  for(var i=0; i<5; i++){
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:4px;';
+    div.innerHTML = '<input type="text" placeholder="Respuesta '+(i+1)+'" id="ansIn'+i+'" style="flex:1;padding:6px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--ink);font-size:12px;"/>'
+      +'<input type="number" placeholder="Pts" id="ptsIn'+i+'" style="width:50px;padding:6px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--ink);font-size:12px;"/>';
+    container.appendChild(div);
+  }
+}
+
+[1,2,3].forEach(function(num){
+  document.getElementById('s' + num).addEventListener('click', function(){
+    this.classList.toggle('active');
+    if(this.classList.contains('active')) GameEngine.sfx.buzzer();
+  });
+});
+
+document.getElementById('loadSurveyBtn').addEventListener('click', function(){
+  var q = document.getElementById('qInput').value.trim();
+  if(q) survey.question = q;
+  var newAns = [];
+  for(var i=0; i<5; i++){
+    var txt = document.getElementById('ansIn'+i).value.trim();
+    var pts = parseInt(document.getElementById('ptsIn'+i).value) || 0;
+    if(txt) newAns.push({text: txt, pts: pts, revealed: false});
+  }
+  if(newAns.length) survey.answers = newAns;
+  renderAnswers();
+  GameEngine.sfx.reveal();
+});
+
+renderInputs();
+renderAnswers();
+GameEngine.initMenu();
+</script>
+</body>
+</html>

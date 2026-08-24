@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Jeopardy — Panel del Tutor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared-games.css"/>
+<style>
+  body {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 64px 1fr;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    background: rgba(11, 14, 23, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-glass);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+  }
+  .h-brand {
+    font-family: 'Outfit', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.3));
+  }
+  .h-controls { display: flex; gap: 12px; align-items: center; }
+
+  /* Main Grid Layout */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+  }
+
+  .content-area {
+    padding: 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sidebar {
+    background: rgba(14, 18, 30, 0.9);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border-glass);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  /* PIN Display Banner */
+  .pin-card {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.05));
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 20px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.15);
+  }
+  .pin-title { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+  .pin-value { font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 800; color: var(--neon-gold); text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+
+  /* Category Chip Bar */
+  .cat-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .cat-chip {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s;
+  }
+  .cat-chip:hover { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08); }
+  .cat-chip input {
+    background: transparent;
+    border: none;
+    color: var(--neon-gold);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    outline: none;
+    width: 120px;
+  }
+  .cat-rm {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    transition: color 0.2s;
+  }
+  .cat-rm:hover { color: var(--neon-rose); }
+
+  /* Category Tabs */
+  .cat-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cat-tab {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .cat-tab.active {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
+    border-color: rgba(245, 158, 11, 0.6);
+    color: var(--neon-gold);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+  }
+
+  /* Questions Table */
+  .q-grid { display: flex; flex-direction: column; gap: 10px; }
+  .q-row-item {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 40px;
+    gap: 12px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+    padding: 12px 16px;
+    transition: border-color 0.25s;
+  }
+  .q-row-item:hover { border-color: rgba(255, 255, 255, 0.15); }
+  .q-val-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--neon-gold);
+    text-align: center;
+  }
+  .q-row-item input {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    color: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .q-row-item input:focus { border-color: rgba(245, 158, 11, 0.6); }
+
+  /* Teams Section */
+  .team-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.25s;
+  }
+  .team-dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px currentColor; flex-shrink: 0; }
+  .team-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    outline: none;
+  }
+  .team-score { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; min-width: 70px; text-align: right; }
+  .team-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .team-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); }
+
+  /* Live Reveal Card */
+  .reveal-card {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(18, 22, 36, 0.95));
+    border: 2px solid var(--neon-gold);
+    border-radius: 24px;
+    padding: 32px;
+    text-align: center;
+    display: none;
+    box-shadow: 0 0 50px rgba(245, 158, 11, 0.25);
+  }
+  .reveal-card.show { display: block; animation: zoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes zoomIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .reveal-cat { font-size: 11px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--neon-gold); margin-bottom: 8px; }
+  .reveal-val { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 800; color: var(--neon-gold); margin-bottom: 16px; }
+  .reveal-q { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.4; color: #fff; margin-bottom: 20px; }
+  .reveal-a {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--neon-emerald);
+    padding: 16px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1.5px solid rgba(16, 185, 129, 0.4);
+    border-radius: 14px;
+    display: none;
+    margin-bottom: 20px;
+  }
+  .reveal-a.show { display: block; animation: fadeIn 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="games-menu-overlay" id="gamesOverlay"></div>
+
+<header>
+  <div class="h-brand">🏆 Jeopardy Educativo Panel</div>
+  <div class="h-controls">
+    
+    <div style="position:relative; z-index:9999;">
+      <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
+      <div class="games-menu" id="gamesMenu">
+        <div class="games-menu-header">
+          <span class="games-menu-title">🎮 Zona de Juegos</span>
+          <button class="games-menu-mute" id="gamesMuteBtn" title="Sonido activado">🔊</button>
+        </div>
+        <a class="game-card debates" href="index.html">
+          <div class="game-icon">🎤</div>
+          <div class="game-info"><span class="game-name">Debates / Repaso</span><span class="game-desc">Panel de ruleta y preguntas</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <div class="games-sep"></div>
+        <a class="game-card quiz" href="quiz-admin.html">
+          <div class="game-icon">🎯</div>
+          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card jeopardy" href="jeopardy-admin.html">
+          <div class="game-icon">🏆</div>
+          <div class="game-info"><span class="game-name">Jeopardy</span><span class="game-desc">Tablero de categorías y valores</span></div>
+          <span class="game-badge active">Activo</span>
+        </a>
+        <a class="game-card millonario" href="millonario-admin.html">
+          <div class="game-icon">💰</div>
+          <div class="game-info"><span class="game-name">Millonario</span><span class="game-desc">¿Quién quiere ser millonario?</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card ruleta" href="ruleta-admin.html">
+          <div class="game-icon">🛞</div>
+          <div class="game-info"><span class="game-name">Ruleta de Letras</span><span class="game-desc">Adivina la palabra oculta</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card dijeron" href="dijeron-admin.html">
+          <div class="game-icon">👥</div>
+          <div class="game-info"><span class="game-name">100 Dijeron</span><span class="game-desc">Family Feud educativo</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card batalla" href="batalla-admin.html">
+          <div class="game-icon">⚔️</div>
+          <div class="game-info"><span class="game-name">Batalla</span><span class="game-desc">Equipos en tiempo real</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+      </div>
+    </div>
+
+    <button class="btn-outline" id="openBoardBtn">📺 Abrir Tablero Proyectable</button>
+    <button class="btn-glow btn-glow-amber" id="createGameBtn">🚀 Crear Partida (Generar PIN)</button>
+  </div>
+</header>
+
+<div class="app-layout">
+  <div class="content-area">
+    
+    <!-- PIN Banner -->
+    <div class="pin-card" id="pinCard" style="display:none;">
+      <div>
+        <div class="pin-title">PIN del Tablero Proyectable</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Usa este PIN para sincronizar la pantalla del proyector</div>
+      </div>
+      <div class="pin-value" id="pinDisplay">----</div>
+    </div>
+
+    <!-- Category Setup -->
+    <div class="glass-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;">📂 Categorías del Tablero</span>
+        <button class="btn-outline" id="addCatBtn" style="padding:6px 14px;font-size:12px;">+ Agregar Categoría</button>
+      </div>
+      <div class="cat-row" id="catsRow"></div>
+    </div>
+
+    <!-- Questions Editor -->
+    <div class="glass-panel">
+      <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;">📝 Preguntas y Respuestas</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Selecciona una categoría. Cada columna del tablero tiene 5 preguntas con valores de $100 a $500.</div>
+      <div class="cat-tabs" id="catTabs"></div>
+      <div class="q-grid" id="qEditGrid"></div>
+    </div>
+
+    <!-- Live Reveal Panel -->
+    <div class="reveal-card" id="revealCard">
+      <div class="reveal-cat" id="revealCat">—</div>
+      <div class="reveal-val" id="revealVal">$0</div>
+      <div class="reveal-q" id="revealQ">—</div>
+      <div class="reveal-a" id="revealA">—</div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn-glow btn-glow-purple" id="showAnswerBtn">👁 Revelar Respuesta Correcta</button>
+        <button class="btn-glow btn-glow-emerald" id="awardPointsBtn" style="display:none;">+ Asignar Puntos a Equipo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar: Teams & Points -->
+  <div class="sidebar">
+    <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;">👥 Equipos y Marcador</div>
+    <div id="teamsContainer" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <button class="btn-outline" id="addTeamBtn" style="width:100%;">+ Agregar Equipo</button>
+
+    <div style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;margin-top:10px;color:var(--text-muted);">Asignar Valor de la Celda A...</div>
+    <div id="awardGrid" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+</div>
+
+<script src="shared-games.js"></script>
+<script>
+var J = {
+  categories: [],
+  questions: {},
+  teams: [],
+  activeCell: null,
+  sessionId: null,
+  pin: null
+};
+
+var VALUES = [100, 200, 300, 400, 500];
+var TEAM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#a855f7'];
+var editingCatIdx = 0;
+
+function uid(){ return Math.random().toString(36).slice(2,8); }
+
+function addCategory(name){
+  var idx = J.categories.length;
+  J.categories.push(name || 'Categoría ' + (idx + 1));
+  J.questions[idx] = VALUES.map(function(v){ return {q:'',a:'',value:v,used:false}; });
+  renderCategories();
+  renderCatTabs();
+  selectCatTab(idx);
+}
+
+function renderCategories(){
+  var row = document.getElementById('catsRow'); row.innerHTML = '';
+  J.categories.forEach(function(cat, i){
+    var chip = document.createElement('div');
+    chip.className = 'cat-chip';
+    chip.innerHTML = '<input type="text" value="'+cat.replace(/"/g,'&quot;')+'" data-idx="'+i+'"/><button class="cat-rm" data-idx="'+i+'">&times;</button>';
+    chip.querySelector('input').addEventListener('input', function(e){ J.categories[i] = e.target.value; renderCatTabs(); });
+    chip.querySelector('.cat-rm').addEventListener('click', function(){
+      J.categories.splice(i, 1);
+      var rebuilt = {};
+      var keys = Object.keys(J.questions).map(Number).sort(function(a,b){return a-b;});
+      var idx = 0;
+      keys.forEach(function(k){ if(k !== i){ rebuilt[idx] = J.questions[k]; idx++; }});
+      J.questions = rebuilt;
+      renderCategories(); renderCatTabs();
+      if(editingCatIdx >= J.categories.length) editingCatIdx = Math.max(0, J.categories.length - 1);
+      if(J.categories.length) selectCatTab(editingCatIdx);
+    });
+    row.appendChild(chip);
+  });
+}
+
+function renderCatTabs(){
+  var tabs = document.getElementById('catTabs'); tabs.innerHTML = '';
+  J.categories.forEach(function(cat, i){
+    var btn = document.createElement('button');
+    btn.className = 'cat-tab' + (i === editingCatIdx ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', function(){ selectCatTab(i); });
+    tabs.appendChild(btn);
+  });
+}
+
+function selectCatTab(idx){
+  editingCatIdx = idx;
+  renderCatTabs();
+  renderQuestionEditor();
+}
+
+function renderQuestionEditor(){
+  var grid = document.getElementById('qEditGrid'); grid.innerHTML = '';
+  var qs = J.questions[editingCatIdx];
+  if(!qs) return;
+  qs.forEach(function(q, i){
+    var row = document.createElement('div');
+    row.className = 'q-row-item';
+    row.innerHTML = '<span class="q-val-tag">$'+q.value+'</span>'
+      +'<input type="text" placeholder="Escribe la pregunta para $'+q.value+'..." value="'+((q.q||'').replace(/"/g,'&quot;'))+'" data-field="q" data-qi="'+i+'"/>'
+      +'<input type="text" placeholder="Respuesta correcta..." value="'+((q.a||'').replace(/"/g,'&quot;'))+'" data-field="a" data-qi="'+i+'"/>'
+      +'<span style="font-size:16px;text-align:center;color:'+(q.used?'var(--neon-emerald)':'var(--text-dim)')+';">'+(q.used?'✓':'○')+'</span>';
+    row.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('input', function(e){
+        var qi = parseInt(e.target.dataset.qi);
+        var field = e.target.dataset.field;
+        J.questions[editingCatIdx][qi][field] = e.target.value;
+      });
+    });
+    grid.appendChild(row);
+  });
+}
+
+document.getElementById('addCatBtn').addEventListener('click', function(){ addCategory(); });
+
+function addTeam(name){
+  var idx = J.teams.length;
+  J.teams.push({id:uid(), name: name || 'Equipo ' + (idx + 1), score: 0, color: TEAM_COLORS[idx % TEAM_COLORS.length]});
+  renderTeams(); renderAwardGrid();
+}
+
+function renderTeams(){
+  var container = document.getElementById('teamsContainer'); container.innerHTML = '';
+  J.teams.forEach(function(team, i){
+    var card = document.createElement('div');
+    card.className = 'team-card';
+    card.innerHTML = '<div class="team-dot" style="background:'+team.color+';color:'+team.color+';"></div>'
+      +'<input type="text" class="team-input" value="'+team.name.replace(/"/g,'&quot;')+'" data-idx="'+i+'"/>'
+      +'<span class="team-score" style="color:'+team.color+';" id="teamScore'+i+'">'+team.score+'</span>'
+      +'<button class="team-btn" data-idx="'+i+'" data-act="minus">−</button>'
+      +'<button class="team-btn" data-idx="'+i+'" data-act="rm" style="color:var(--neon-rose);">&times;</button>';
+    card.querySelector('.team-input').addEventListener('input', function(e){ J.teams[i].name = e.target.value; renderAwardGrid(); });
+    card.querySelectorAll('.team-btn').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        var act = e.currentTarget.dataset.act;
+        if(act === 'minus'){ J.teams[i].score = Math.max(0, J.teams[i].score - 100); renderTeams(); syncSession(); }
+        else if(act === 'rm'){ J.teams.splice(i, 1); renderTeams(); renderAwardGrid(); syncSession(); }
+      });
+    });
+    container.appendChild(card);
+  });
+}
+
+function renderAwardGrid(){
+  var grid = document.getElementById('awardGrid'); grid.innerHTML = '';
+  if(!J.activeCell){
+    grid.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Selecciona una celda en el tablero para asignar puntos.</div>';
+    return;
+  }
+  var cellVal = J.questions[J.activeCell.catIdx][J.activeCell.qIdx].value;
+  J.teams.forEach(function(team, i){
+    var btn = document.createElement('button');
+    btn.className = 'btn-outline';
+    btn.style.cssText = 'width:100%;text-align:left;display:flex;align-items:center;gap:10px;justify-content:space-between;padding:12px 14px;';
+    btn.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><div style="width:10px;height:10px;border-radius:50%;background:'+team.color+';"></div><span>'+team.name+'</span></div>'
+      +'<span style="font-family:\'JetBrains Mono\',monospace;font-weight:800;color:var(--neon-gold);">+$'+cellVal+'</span>';
+    btn.addEventListener('click', function(){
+      J.teams[i].score += cellVal;
+      J.questions[J.activeCell.catIdx][J.activeCell.qIdx].used = true;
+      GameEngine.sfx.correct();
+      J.activeCell = null;
+      document.getElementById('revealCard').classList.remove('show');
+      renderTeams(); renderQuestionEditor(); renderAwardGrid(); syncSession();
+    });
+    grid.appendChild(btn);
+  });
+
+  var noBtn = document.createElement('button');
+  noBtn.className = 'btn-outline';
+  noBtn.style.cssText = 'width:100%;color:var(--text-muted);justify-content:center;margin-top:4px;';
+  noBtn.textContent = '✕ Nadie acertó (Marcar usada)';
+  noBtn.addEventListener('click', function(){
+    J.questions[J.activeCell.catIdx][J.activeCell.qIdx].used = true;
+    GameEngine.sfx.wrong();
+    J.activeCell = null;
+    document.getElementById('revealCard').classList.remove('show');
+    renderQuestionEditor(); renderAwardGrid(); syncSession();
+  });
+  grid.appendChild(noBtn);
+}
+
+document.getElementById('addTeamBtn').addEventListener('click', function(){ addTeam(); });
+
+document.getElementById('showAnswerBtn').addEventListener('click', function(){
+  document.getElementById('revealA').classList.add('show');
+  this.style.display = 'none';
+  document.getElementById('awardPointsBtn').style.display = 'inline-block';
+  GameEngine.sfx.suspense();
+});
+
+document.getElementById('createGameBtn').addEventListener('click', function(){
+  if(!J.categories.length){ alert('Agrega al menos 1 categoría.'); return; }
+  var client = GameEngine.getClient();
+  if(!client){ alert('Error de conexión a Supabase.'); return; }
+
+  var pin = GameEngine.generatePIN();
+  var payload = {
+    pin: pin,
+    status: 'board',
+    categories: JSON.parse(JSON.stringify(J.categories)),
+    teams: JSON.parse(JSON.stringify(J.teams)),
+    revealed: [],
+    current_cell: null
+  };
+
+  client.from('jeopardy_sessions').insert(payload).select().single().then(function(res){
+    if(res.error){ alert('Error: ' + res.error.message); return; }
+    J.sessionId = res.data.id;
+    J.pin = pin;
+    document.getElementById('pinCard').style.display = 'flex';
+    document.getElementById('pinDisplay').textContent = pin;
+    GameEngine.sfx.fanfare();
+  });
+});
+
+function syncSession(){
+  if(!J.sessionId) return;
+  var client = GameEngine.getClient(); if(!client) return;
+  var revealed = [];
+  Object.keys(J.questions).forEach(function(catIdx){
+    J.questions[catIdx].forEach(function(q, qIdx){
+      if(q.used) revealed.push({catIdx:parseInt(catIdx), qIdx:qIdx});
+    });
+  });
+  var patch = {
+    categories: J.categories,
+    teams: J.teams,
+    revealed: revealed,
+    current_cell: J.activeCell ? {
+      catIdx: J.activeCell.catIdx,
+      qIdx: J.activeCell.qIdx,
+      question: J.questions[J.activeCell.catIdx][J.activeCell.qIdx].q,
+      answer: J.questions[J.activeCell.catIdx][J.activeCell.qIdx].a,
+      value: J.questions[J.activeCell.catIdx][J.activeCell.qIdx].value,
+      showAnswer: document.getElementById('revealA').classList.contains('show')
+    } : null,
+    status: 'board'
+  };
+  client.from('jeopardy_sessions').update(patch).eq('id', J.sessionId).then(function(){});
+}
+
+document.getElementById('openBoardBtn').addEventListener('click', function(){
+  window.open('jeopardy-board.html' + (J.pin ? '?pin=' + J.pin : ''), 'shared_public_window', 'width=1280,height=720');
+});
+
+addCategory('Historia');
+addCategory('Ciencias');
+addCategory('Geografía');
+addTeam('Equipo A');
+addTeam('Equipo B');
+renderAwardGrid();
+GameEngine.initMenu();
+</script>
+</body>
+</html>

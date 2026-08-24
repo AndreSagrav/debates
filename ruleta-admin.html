@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ruleta de Letras — Panel del Tutor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛞</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-games.css"/>
+<style>
+:root{--bg:#041a18;--surface:#0b2926;--s2:#123834;--border:#1d4d47;--teal:#2dd4bf;--gold:#ffd700;--ink:#e6fcf8;--ink-dim:#6ca8a0;--red:#ff5252;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
+header{background:#07211e;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+.h-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--teal);display:flex;align-items:center;gap:8px;}
+.btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink);transition:all .2s;font-family:'DM Sans',sans-serif;}
+.btn:hover{border-color:var(--teal);color:var(--teal);}
+.btn-teal{background:linear-gradient(135deg,#2dd4bf,#0d9488);color:#041a18;font-weight:800;border:none;}
+.btn-teal:hover{opacity:.9;}
+.container{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 52px);overflow:hidden;}
+.main-col{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;}
+.side-col{background:var(--surface);border-left:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.card-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);}
+
+/* Phrase Display Grid */
+.phrase-board{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:24px;background:var(--s2);border:2px solid var(--border);border-radius:16px;min-height:160px;align-items:center;}
+.letter-box{width:46px;height:56px;background:#07211e;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:26px;font-weight:700;color:var(--teal);box-shadow:0 4px 10px rgba(0,0,0,.3);}
+.letter-box.space{background:transparent;border:none;width:20px;box-shadow:none;}
+.letter-box.revealed{background:var(--teal);color:#041a18;border-color:#5eead4;animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+
+/* Keyboard */
+.keyboard{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;}
+.key-btn{width:36px;height:42px;border-radius:6px;border:1px solid var(--border);background:var(--s2);color:var(--ink);font-weight:700;font-size:14px;cursor:pointer;transition:all .15s;}
+.key-btn:hover:not(.used){border-color:var(--teal);color:var(--teal);}
+.key-btn.used{opacity:.2;cursor:not-allowed;}
+
+/* Input Form */
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);}
+.form-group input{padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--ink);font-size:14px;outline:none;}
+.form-group input:focus{border-color:var(--teal);}
+</style>
+</head>
+<body>
+<div class="games-menu-overlay" id="gamesOverlay"></div>
+
+<header>
+  <div class="h-title">🛞 Ruleta de Letras</div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div style="position:relative; z-index:9999;">
+      <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
+      <div class="games-menu" id="gamesMenu">
+        <div class="games-menu-header">
+          <span class="games-menu-title">🎮 Zona de Juegos</span>
+          <button class="games-menu-mute" id="gamesMuteBtn" title="Sonido activado">🔊</button>
+        </div>
+        <a class="game-card debates" href="index.html">
+          <div class="game-icon">🎤</div>
+          <div class="game-info"><span class="game-name">Debates / Repaso</span><span class="game-desc">Panel de ruleta y preguntas</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <div class="games-sep"></div>
+        <a class="game-card quiz" href="quiz-admin.html">
+          <div class="game-icon">🎯</div>
+          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card jeopardy" href="jeopardy-admin.html">
+          <div class="game-icon">🏆</div>
+          <div class="game-info"><span class="game-name">Jeopardy</span><span class="game-desc">Tablero de categorías y valores</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card millonario" href="millonario-admin.html">
+          <div class="game-icon">💰</div>
+          <div class="game-info"><span class="game-name">Millonario</span><span class="game-desc">¿Quién quiere ser millonario?</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card ruleta" href="ruleta-admin.html">
+          <div class="game-icon">🛞</div>
+          <div class="game-info"><span class="game-name">Ruleta de Letras</span><span class="game-desc">Adivina la palabra oculta</span></div>
+          <span class="game-badge active">Activo</span>
+        </a>
+        <a class="game-card dijeron" href="dijeron-admin.html">
+          <div class="game-icon">👥</div>
+          <div class="game-info"><span class="game-name">100 Dijeron</span><span class="game-desc">Family Feud educativo</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card batalla" href="batalla-admin.html">
+          <div class="game-icon">⚔️</div>
+          <div class="game-info"><span class="game-name">Batalla</span><span class="game-desc">Equipos en tiempo real</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+      </div>
+    </div>
+
+    <button class="btn btn-teal" id="createGameBtn">🚀 Crear Partida</button>
+  </div>
+</header>
+<div class="container">
+  <div class="main-col">
+    <div class="card">
+      <div class="card-title" id="hintTitle">💡 Pista: Configura una frase abajo</div>
+      <div class="phrase-board" id="phraseBoard">
+        <div style="color:var(--ink-dim);font-size:14px;">Escribe una palabra o frase secreta para comenzar</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔤 Seleccionar Letra</div>
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+  </div>
+  <div class="side-col">
+    <div class="card">
+      <div class="card-title">⚙️ Configurar Palabra</div>
+      <div class="form-group">
+        <label>Pista / Categoría</label>
+        <input type="text" id="hintInput" placeholder="Ej. Concepto Biológico"/>
+      </div>
+      <div class="form-group">
+        <label>Frase Oculta</label>
+        <input type="text" id="phraseInput" placeholder="Ej. FOTOSINTESIS"/>
+      </div>
+      <button class="btn btn-teal" id="setPhraseBtn" style="margin-top:8px;">Cargar en Tablero</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🎮 Controles</div>
+      <button class="btn" id="revealAllBtn">👁 Revelar Toda la Frase</button>
+      <button class="btn" id="resetBoardBtn" style="margin-top:4px;">↺ Reiniciar Letras</button>
+    </div>
+  </div>
+</div>
+<script src="shared-games.js"></script>
+<script>
+var R = {
+  phrase: '',
+  hint: '',
+  revealedLetters: [],
+  usedKeys: []
+};
+
+var ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
+
+function renderKeyboard(){
+  var kb = document.getElementById('keyboard'); kb.innerHTML = '';
+  ALPHABET.forEach(function(letter){
+    var btn = document.createElement('button');
+    var isUsed = R.usedKeys.indexOf(letter) >= 0;
+    btn.className = 'key-btn' + (isUsed ? ' used' : '');
+    btn.textContent = letter;
+    btn.addEventListener('click', function(){
+      if(isUsed || !R.phrase) return;
+      R.usedKeys.push(letter);
+      if(R.phrase.toUpperCase().indexOf(letter) >= 0){
+        R.revealedLetters.push(letter);
+        GameEngine.sfx.correct();
+      } else {
+        GameEngine.sfx.wrong();
+      }
+      renderKeyboard();
+      renderBoard();
+    });
+    kb.appendChild(btn);
+  });
+}
+
+function renderBoard(){
+  var board = document.getElementById('phraseBoard'); board.innerHTML = '';
+  if(!R.phrase){
+    board.innerHTML = '<div style="color:var(--ink-dim);font-size:14px;">Escribe una palabra o frase secreta para comenzar</div>';
+    return;
+  }
+  document.getElementById('hintTitle').textContent = '💡 Pista: ' + (R.hint || 'Sin pista');
+  var chars = R.phrase.toUpperCase().split('');
+  chars.forEach(function(ch){
+    var box = document.createElement('div');
+    if(ch === ' '){
+      box.className = 'letter-box space';
+    } else {
+      var isRevealed = R.revealedLetters.indexOf(ch) >= 0;
+      box.className = 'letter-box' + (isRevealed ? ' revealed' : '');
+      box.textContent = isRevealed ? ch : '';
+    }
+    board.appendChild(box);
+  });
+}
+
+document.getElementById('setPhraseBtn').addEventListener('click', function(){
+  var p = document.getElementById('phraseInput').value.trim();
+  var h = document.getElementById('hintInput').value.trim();
+  if(!p){ alert('Ingresa una frase.'); return; }
+  R.phrase = p;
+  R.hint = h;
+  R.revealedLetters = [];
+  R.usedKeys = [];
+  renderKeyboard();
+  renderBoard();
+  GameEngine.sfx.reveal();
+});
+
+document.getElementById('revealAllBtn').addEventListener('click', function(){
+  if(!R.phrase) return;
+  R.revealedLetters = ALPHABET.slice();
+  renderBoard();
+  GameEngine.sfx.fanfare();
+});
+
+document.getElementById('resetBoardBtn').addEventListener('click', function(){
+  R.revealedLetters = [];
+  R.usedKeys = [];
+  renderKeyboard();
+  renderBoard();
+});
+
+renderKeyboard();
+GameEngine.initMenu();
+</script>
+</body>
+</html>

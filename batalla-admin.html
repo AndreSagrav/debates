@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Batalla de Equipos — Panel del Tutor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-games.css"/>
+<style>
+:root{--bg:#041a0c;--surface:#0b2915;--s2:#12381e;--border:#1d4d29;--green:#22c55e;--red:#ef4444;--blue:#3a86ef;--gold:#ffd700;--ink:#e6fcf0;--ink-dim:#6ca880;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
+header{background:#072110;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+.h-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--green);display:flex;align-items:center;gap:8px;}
+.btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink);transition:all .2s;font-family:'DM Sans',sans-serif;}
+.btn:hover{border-color:var(--green);color:var(--green);}
+.btn-green{background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-weight:700;border:none;}
+.container{display:flex;flex-direction:column;padding:24px;gap:20px;max-width:1000px;margin:0 auto;width:100%;overflow-y:auto;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;}
+.card-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);}
+
+/* Tug of war track */
+.battle-track{height:80px;background:var(--s2);border:2px solid var(--border);border-radius:20px;position:relative;overflow:hidden;display:flex;align-items:center;}
+.team-side-red{width:50%;height:100%;background:rgba(239,68,68,.15);transition:width .4s ease;}
+.team-side-blue{width:50%;height:100%;background:rgba(58,134,239,.15);transition:width .4s ease;}
+.rope-knot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px rgba(255,215,0,.5);transition:left .4s cubic-bezier(.34,1.56,.64,1);}
+
+.teams-header{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:24px;font-weight:700;}
+.team-red-title{color:var(--red);}
+.team-blue-title{color:var(--blue);}
+</style>
+</head>
+<div class="games-menu-overlay" id="gamesOverlay"></div>
+
+<header>
+  <div class="h-title">⚔️ Batalla de Equipos (Tug of War)</div>
+  <div>
+    <div style="position:relative; z-index:9999;">
+      <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
+      <div class="games-menu" id="gamesMenu">
+        <div class="games-menu-header">
+          <span class="games-menu-title">🎮 Zona de Juegos</span>
+          <button class="games-menu-mute" id="gamesMuteBtn" title="Sonido activado">🔊</button>
+        </div>
+        <a class="game-card debates" href="index.html">
+          <div class="game-icon">🎤</div>
+          <div class="game-info"><span class="game-name">Debates / Repaso</span><span class="game-desc">Panel de ruleta y preguntas</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <div class="games-sep"></div>
+        <a class="game-card quiz" href="quiz-admin.html">
+          <div class="game-icon">🎯</div>
+          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card jeopardy" href="jeopardy-admin.html">
+          <div class="game-icon">🏆</div>
+          <div class="game-info"><span class="game-name">Jeopardy</span><span class="game-desc">Tablero de categorías y valores</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card millonario" href="millonario-admin.html">
+          <div class="game-icon">💰</div>
+          <div class="game-info"><span class="game-name">Millonario</span><span class="game-desc">¿Quién quiere ser millonario?</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card ruleta" href="ruleta-admin.html">
+          <div class="game-icon">🛞</div>
+          <div class="game-info"><span class="game-name">Ruleta de Letras</span><span class="game-desc">Adivina la palabra oculta</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card dijeron" href="dijeron-admin.html">
+          <div class="game-icon">👥</div>
+          <div class="game-info"><span class="game-name">100 Dijeron</span><span class="game-desc">Family Feud educativo</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card batalla" href="batalla-admin.html">
+          <div class="game-icon">⚔️</div>
+          <div class="game-info"><span class="game-name">Batalla</span><span class="game-desc">Equipos en tiempo real</span></div>
+          <span class="game-badge active">Activo</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="teams-header">
+      <span class="team-red-title" id="redScore">🔴 Equipo Rojo: 0 pts</span>
+      <span class="team-blue-title" id="blueScore">🔵 Equipo Azul: 0 pts</span>
+    </div>
+    <div class="battle-track">
+      <div class="team-side-red" id="redSide"></div>
+      <div class="team-side-blue" id="blueSide"></div>
+      <div class="rope-knot" id="ropeKnot">⚔️</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎮 Simular Puntos de Batalla</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn" id="pullRedBtn" style="border-color:var(--red);color:var(--red);padding:12px 24px;font-size:16px;">🔴 ¡Jalar para Rojo! (+100)</button>
+      <button class="btn" id="pullBlueBtn" style="border-color:var(--blue);color:var(--blue);padding:12px 24px;font-size:16px;">🔵 ¡Jalar para Azul! (+100)</button>
+    </div>
+  </div>
+</div>
+<script src="shared-games.js"></script>
+<script>
+var redPts = 0;
+var bluePts = 0;
+
+function updateTrack(){
+  document.getElementById('redScore').textContent = '🔴 Equipo Rojo: ' + redPts + ' pts';
+  document.getElementById('blueScore').textContent = '🔵 Equipo Azul: ' + bluePts + ' pts';
+  
+  var total = redPts + bluePts;
+  var redPct = total > 0 ? (redPts / total) * 100 : 50;
+  // Clamp between 10% and 90%
+  redPct = Math.max(10, Math.min(90, redPct));
+  
+  document.getElementById('redSide').style.width = redPct + '%';
+  document.getElementById('blueSide').style.width = (100 - redPct) + '%';
+  document.getElementById('ropeKnot').style.left = redPct + '%';
+
+  if(redPct >= 85){ GameEngine.sfx.fanfare(); alert('¡GANÓ EL EQUIPO ROJO! 🔴🏆'); }
+  else if(redPct <= 15){ GameEngine.sfx.fanfare(); alert('¡GANÓ EL EQUIPO AZUL! 🔵🏆'); }
+}
+
+document.getElementById('pullRedBtn').addEventListener('click', function(){
+  redPts += 100; updateTrack(); GameEngine.sfx.reveal();
+});
+document.getElementById('pullBlueBtn').addEventListener('click', function(){
+  bluePts += 100; updateTrack(); GameEngine.sfx.reveal();
+});
+
+updateTrack();
+GameEngine.initMenu();
+</script>
+</body>
+</html>

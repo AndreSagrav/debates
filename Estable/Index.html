@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Admin — Panel de Control</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-games.css">
 <style>
   :root{
     --bg:#141618;--surface:#1c1f24;--s2:#191c21;
@@ -22,15 +24,15 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:grid;grid-template-rows:auto 1fr;overflow:hidden;}
 
-  /* HEADER */
-  header{background:var(--ink);color:#fff;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;}
-  .h-title{font-family:'DM Serif Display',serif;font-size:18px;}
+  /* HEADER (High Contrast & Colorblind Friendly) */
+  header{background:#0f172a;color:#ffffff;border-bottom:2px solid #1e293b;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;}
+  .h-title{font-family:'DM Serif Display',serif;font-size:18px;color:#ffffff;font-weight:700;}
   .h-right{display:flex;align-items:center;gap:8px;}
-  .h-badge{background:#fff2;border:1px solid #fff3;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#fff9;}
-  #openPublicBtn{background:var(--a);border:none;color:#fff;border-radius:7px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;}
-  #openPublicBtn:hover{opacity:.85;}
-  #sessionResetBtn{background:transparent;border:1px solid #ffffff40;color:#ffcdd2;border-radius:7px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;}
-  #sessionResetBtn:hover{background:var(--red);border-color:var(--red);color:#fff;}
+  .h-badge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#f8fafc;}
+  #openPublicBtn{background:#2563eb;border:none;color:#ffffff;border-radius:7px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+  #openPublicBtn:hover{opacity:.9;}
+  #sessionResetBtn{background:#1e293b;border:1px solid #e11d48;color:#fecdd3;border-radius:7px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;}
+  #sessionResetBtn:hover{background:#e11d48;color:#fff;}
 
   /* MODAL */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;align-items:center;justify-content:center;}
@@ -220,12 +222,79 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="supabaseModal">
+  <div class="modal">
+    <div class="modal-icon">☁️</div>
+    <div class="modal-title">Sincronización Supabase</div>
+    <div class="modal-body">
+      Conecta tu proyecto Supabase para mantener tus participantes, preguntas y notas sincronizados entre cualquier dispositivo.<br><br>
+      <strong>Proyecto:</strong> <code>ksakdjvdqspzwjslzlnb</code><br><br>
+      <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px;color:var(--ink);">Clave Pública (Anon API Key):</label>
+      <input type="text" id="supabaseKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="width:100%;padding:8px;font-family:'DM Mono',monospace;font-size:11px;background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--ink);outline:none;"/>
+      <div id="supabaseStatusText" style="font-size:11px;margin-top:8px;color:var(--ink3);">Sin clave configurada</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" id="supabaseCancelBtn">Cerrar</button>
+      <button class="modal-confirm" id="supabaseSaveBtn" style="background:var(--a);">Conectar y Sincronizar</button>
+    </div>
+  </div>
+</div>
+
+<div class="games-menu-overlay" id="gamesOverlay"></div>
+
 <header>
   <div class="h-title">⚙ Panel de Control del Tutor</div>
   <div class="h-right">
     <div class="h-badge">Solo tú ves esto</div>
+
+    <div style="position:relative; z-index:9999;">
+      <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
+      <div class="games-menu" id="gamesMenu">
+        <div class="games-menu-header">
+          <span class="games-menu-title">🎮 Zona de Juegos</span>
+          <button class="games-menu-mute" id="gamesMuteBtn" title="Sonido activado">🔊</button>
+        </div>
+        <a class="game-card debates" href="#" onclick="document.getElementById('gamesMenu').classList.remove('open');document.getElementById('gamesOverlay').classList.remove('open');document.getElementById('gamesTrigger').classList.remove('open');return false;">
+          <div class="game-icon">🎤</div>
+          <div class="game-info"><span class="game-name">Debates / Repaso</span><span class="game-desc">Panel de ruleta y preguntas</span></div>
+          <span class="game-badge active">Activo</span>
+        </a>
+        <div class="games-sep"></div>
+        <a class="game-card quiz" href="quiz-admin.html">
+          <div class="game-icon">🎯</div>
+          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <span class="game-badge active">Listo</span>
+        </a>
+        <a class="game-card jeopardy" href="jeopardy-admin.html">
+          <div class="game-icon">🏆</div>
+          <div class="game-info"><span class="game-name">Jeopardy</span><span class="game-desc">Tablero de categorías y valores</span></div>
+          <span class="game-badge active">Listo</span>
+        </a>
+        <a class="game-card millonario" href="millonario-admin.html">
+          <div class="game-icon">💰</div>
+          <div class="game-info"><span class="game-name">Millonario</span><span class="game-desc">¿Quién quiere ser millonario?</span></div>
+          <span class="game-badge active">Listo</span>
+        </a>
+        <a class="game-card ruleta" href="ruleta-admin.html">
+          <div class="game-icon">🛞</div>
+          <div class="game-info"><span class="game-name">Ruleta de Letras</span><span class="game-desc">Adivina la palabra oculta</span></div>
+          <span class="game-badge active">Listo</span>
+        </a>
+        <a class="game-card dijeron" href="dijeron-admin.html">
+          <div class="game-icon">👥</div>
+          <div class="game-info"><span class="game-name">100 Dijeron</span><span class="game-desc">Family Feud educativo</span></div>
+          <span class="game-badge active">Listo</span>
+        </a>
+        <a class="game-card batalla" href="batalla-admin.html">
+          <div class="game-icon">⚔️</div>
+          <div class="game-info"><span class="game-name">Batalla</span><span class="game-desc">Equipos en tiempo real</span></div>
+          <span class="game-badge active">Listo</span>
+        </a>
+      </div>
+    </div>
+
     <button id="sessionResetBtn">↺ Resetear sesión</button>
-    <button id="newSessionBtn">📦 Nueva sesión</button>
+    <button id="newSessionBtn" style="background:#1e293b;border:1px solid #d97706;color:#fbbf24;border-radius:7px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;">📦 Nueva sesión</button>
     <button id="openPublicBtn">↗ Abrir Vista Pública</button>
   </div>
 </header>
@@ -674,8 +743,31 @@ function startHeartbeat(){
   }, 1500);
 }
 
+function broadcastRoulette(payload){
+  if(publicWin&&!publicWin.closed){
+    try { publicWin.postMessage(payload,'*'); }catch(e){}
+  }
+  if(window.BroadcastChannel){
+    try {
+      var ch1 = new BroadcastChannel('universal_public_channel');
+      ch1.postMessage(payload);
+      var ch2 = new BroadcastChannel('debate_channel');
+      ch2.postMessage(payload);
+    } catch(e){}
+  }
+}
+
 function writeStateBus(){
-  try{ localStorage.setItem('debate_pub_state', JSON.stringify({d:getMsg(), ts:Date.now()})); }catch(e){}
+  var msg = getMsg();
+  try{ localStorage.setItem('debate_pub_state', JSON.stringify({d:msg, ts:Date.now()})); }catch(e){}
+  if(window.BroadcastChannel){
+    try {
+      var ch1 = new BroadcastChannel('universal_public_channel');
+      ch1.postMessage(msg);
+      var ch2 = new BroadcastChannel('debate_channel');
+      ch2.postMessage(msg);
+    } catch(e){}
+  }
 }
 
 function broadcast(){
@@ -700,33 +792,141 @@ function persist(){
       generalNotes:S.generalNotes,
       backupParticipants:S.backupParticipants
     }));
+    saveToSupabase();
   }catch(e){}
 }
 
+/* SUPABASE CLIENT & CLOUD SYNC */
+var SUPABASE_URL = 'https://ksakdjvdqspzwjslzlnb.supabase.co';
+var DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWtkanZkcXNwendqc2x6bG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzUzNjAsImV4cCI6MjEwMTQxMTM2MH0.vWm1Fto7FY8h12xspDgXjn1jOwYY8FzUEmWrP_DOmhA';
+var supabaseClient = null;
+var _supabaseTimer = null;
+var _isRemoteUpdate = false;
+
+function initSupabase(key){
+  if(!key) key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_KEY;
+  var statusText = document.getElementById('supabaseStatusText');
+  var btn = document.getElementById('supabaseBtn');
+  var keyInput = document.getElementById('supabaseKeyInput');
+  if(keyInput && key) keyInput.value = key;
+  if(!key){
+    if(statusText) statusText.textContent = 'Sin clave anon configurada.';
+    if(btn){ btn.textContent = '☁️ Supabase'; btn.style.borderColor = 'var(--a)'; btn.style.color = 'var(--a)'; }
+    return false;
+  }
+  if(window.supabase && typeof window.supabase.createClient === 'function'){
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, key);
+      localStorage.setItem('supabase_anon_key', key);
+      if(statusText) statusText.textContent = '✅ Conectado a ' + SUPABASE_URL;
+      if(btn){ btn.textContent = '☁️ Nube Activa'; btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)'; }
+      subscribeSupabaseRealtime();
+      loadFromSupabase();
+      return true;
+    } catch(e) {
+      if(statusText) statusText.textContent = '❌ Error de conexión: ' + e.message;
+    }
+  }
+  return false;
+}
+
+function saveToSupabase(){
+  if(!supabaseClient || _isRemoteUpdate) return;
+  if(_supabaseTimer) clearTimeout(_supabaseTimer);
+  _supabaseTimer = setTimeout(function(){
+    var payload = {
+      id: 'default',
+      data: {
+        participants: S.participants, selectedA: S.selectedA, selectedB: S.selectedB,
+        questions: S.questions, activeQ: S.activeQ, showQNote: S.showQNote,
+        reinfUnlocked: S.reinfUnlocked, questionNotes: S.questionNotes,
+        generalNotes: S.generalNotes, backupParticipants: S.backupParticipants
+      },
+      updated_at: new Date().toISOString()
+    };
+    supabaseClient.from('debate_state').upsert(payload).then(function(res){
+      if(res.error){ console.warn('Supabase sync error:', res.error); }
+    });
+  }, 400);
+}
+
+function loadFromSupabase(){
+  if(!supabaseClient) return;
+  supabaseClient.from('debate_state').select('*').eq('id', 'default').single().then(function(res){
+    if(res.data && res.data.data){
+      applyRemoteState(res.data.data);
+    } else {
+      // Si la base de datos está vacía, subir el estado local actual como primer registro
+      saveToSupabase();
+    }
+  });
+}
+
+function applyRemoteState(saved){
+  if(!saved) return;
+  _isRemoteUpdate = true;
+  S.participants  = (saved.participants||[]).map(function(p){return {id:p.id,name:p.name||'',used:!!p.used,roleA:!!p.roleA,roleB:!!p.roleB};});
+  S.selectedA     = saved.selectedA||null;
+  S.selectedB     = saved.selectedB||null;
+  S.questions     = (saved.questions||[]).map(function(q){
+    return {id:q.id,text:q.text||'',note:q.note||'',used:!!q.used,reinforcement:!!q.reinforcement};
+  });
+  S.activeQ       = saved.activeQ||null;
+  S.showQNote     = saved.showQNote||false;
+  S.reinfUnlocked = saved.reinfUnlocked||false;
+  S.questionNotes = saved.questionNotes||{};
+  S.generalNotes  = saved.generalNotes||'';
+  S.backupParticipants = (saved.backupParticipants||[]).map(function(p){return {id:p.id,name:p.name||''};});
+  
+  renderParticipants();
+  renderBackupParticipants();
+  renderQuestions();
+  broadcast();
+  setTimeout(function(){ _isRemoteUpdate = false; }, 200);
+}
+
+function subscribeSupabaseRealtime(){
+  if(!supabaseClient) return;
+  try {
+    supabaseClient.channel('debate_state_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state' }, function(payload){
+        if(payload.new && payload.new.data){
+          applyRemoteState(payload.new.data);
+        }
+      })
+      .subscribe();
+  } catch(e){}
+}
+
 window.addEventListener('message',function(e){
-  if(e.data&&e.data.type==='PUBLIC_READY'&&publicWin&&!publicWin.closed){
-    publicWin.postMessage(getMsg(),'*');
-    startHeartbeat();
+  if(e.data&&e.data.type==='PUBLIC_READY'){
+    writeStateBus();
+    if(publicWin&&!publicWin.closed){
+      publicWin.postMessage(getMsg(),'*');
+      startHeartbeat();
+    }
   }
 });
+
+if(window.BroadcastChannel){
+  var uChanRecv = new BroadcastChannel('universal_public_channel');
+  uChanRecv.onmessage = function(e){
+    if(e.data && e.data.type === 'PUBLIC_READY'){
+      writeStateBus();
+      if(publicWin && !publicWin.closed) publicWin.postMessage(getMsg(),'*');
+    }
+  };
+}
 
 document.getElementById('openPublicBtn').addEventListener('click',function(){
   if(publicWin&&!publicWin.closed){
     publicWin.focus();
     publicWin.postMessage(getMsg(),'*');
+    writeStateBus();
     return;
   }
-  publicWin = window.open('about:blank','_blank','width=1280,height=720');
-  if(publicWin){
-    try{
-      publicWin.document.open();
-      publicWin.document.write(buildPublicHTML());
-      publicWin.document.close();
-    }catch(e){
-      // Fallback al blob URL si el navegador bloquea document.write
-      publicWin.location.href = URL.createObjectURL(new Blob([buildPublicHTML()],{type:'text/html'}));
-    }
-  }
+  publicWin = window.open('public-view.html','shared_public_window','width=1280,height=720');
+  setTimeout(function(){ writeStateBus(); }, 300);
 });
 
 /* Nueva sesión — archiva participantes, borra preguntas y notas */
@@ -1018,7 +1218,7 @@ document.getElementById('randABtn').addEventListener('click',function(){
   // Guardia anti-autoenfrentamiento: si el elegido era B, liberar B
   if(S.selectedA === S.selectedB) S.selectedB = null;
   var names=S.participants.map(function(p){return p.name;});
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'},'*');
+  broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'});
   renderParticipants();broadcast();
 });
 document.getElementById('randBBtn').addEventListener('click',function(){
@@ -1033,7 +1233,7 @@ document.getElementById('randBBtn').addEventListener('click',function(){
   // Guardia anti-autoenfrentamiento: si el elegido era A, liberar A
   if(S.selectedA === S.selectedB) S.selectedA = null;
   var names=S.participants.map(function(p){return p.name;});
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'},'*');
+  broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'});
   renderParticipants();broadcast();
 });
 
@@ -1168,7 +1368,7 @@ document.getElementById('randQBtn').addEventListener('click',function(){
   S.showQNote=false;
   var chosenQ=S.questions.find(function(q){return q.id===S.activeQ;});
   var mainTexts=mainQs.map(function(q){return q.text;}).filter(Boolean);
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ?chosenQ.text:''},'*');
+  broadcastRoulette({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ?chosenQ.text:''});
   checkReinforcementUnlock();renderQuestions();broadcast();
 });
 
@@ -1187,7 +1387,7 @@ document.getElementById('randReinfBtn').addEventListener('click',function(){
   S.showQNote=false;
   var chosenQ=S.questions.find(function(q){return q.id===S.activeQ;});
   var reinfTexts=reinfQs.map(function(q){return q.text;}).filter(Boolean);
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ?chosenQ.text:''},'*');
+  broadcastRoulette({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ?chosenQ.text:''});
   checkReinforcementUnlock();renderQuestions();broadcast();
 });
 
@@ -1228,6 +1428,31 @@ renderParticipants();
 renderBackupParticipants();
 renderQuestions();
 resetTimer();
+
+/* Supabase Modal Handlers & Init */
+var sBtn = document.getElementById('supabaseBtn');
+if(sBtn){
+  sBtn.addEventListener('click', function(){
+    var modal = document.getElementById('supabaseModal');
+    if(modal) modal.classList.add('open');
+  });
+}
+document.getElementById('supabaseCancelBtn').addEventListener('click', function(){
+  var modal = document.getElementById('supabaseModal');
+  if(modal) modal.classList.remove('open');
+});
+document.getElementById('supabaseSaveBtn').addEventListener('click', function(){
+  var input = document.getElementById('supabaseKeyInput');
+  var key = input ? input.value.trim() : '';
+  if(initSupabase(key)){
+    var modal = document.getElementById('supabaseModal');
+    if(modal) modal.classList.remove('open');
+  }
+});
+
+initSupabase();
 </script>
+<script src="shared-games.js"></script>
+<script>GameEngine.initMenu();</script>
 </body>
 </html>

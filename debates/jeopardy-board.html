@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Jeopardy — Tablero Proyectable</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared-games.css"/>
+<style>
+  body {
+    background: #04060d;
+    background-image: 
+      radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 50% 90%, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* Scorebar Top Header */
+  .scorebar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 16px 32px;
+    background: rgba(11, 14, 23, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-glass);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .team-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s;
+  }
+
+  .team-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 0 14px currentColor;
+  }
+
+  .team-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .team-pts {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 800;
+    text-shadow: 0 0 15px currentColor;
+  }
+
+  /* Board Grid */
+  .board {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 28px;
+    gap: 12px;
+  }
+
+  .board-row {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .board-cell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Category Headers */
+  .cat-cell {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9));
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(14px, 2.2vw, 22px);
+    font-weight: 800;
+    color: #fff;
+    text-align: center;
+    padding: 12px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    letter-spacing: 0.5px;
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.25);
+    min-height: 60px;
+  }
+
+  /* Value Cells */
+  .val-cell {
+    background: linear-gradient(135deg, rgba(30, 27, 75, 0.9), rgba(15, 23, 42, 0.9));
+    backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(99, 102, 241, 0.25);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(22px, 3.8vw, 48px);
+    font-weight: 800;
+    color: var(--neon-gold);
+    text-shadow: 0 0 25px rgba(251, 191, 36, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    min-height: 75px;
+  }
+
+  .val-cell:not(.used):hover {
+    background: linear-gradient(135deg, rgba(49, 46, 129, 0.95), rgba(30, 27, 75, 0.95));
+    border-color: rgba(251, 191, 36, 0.8);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(245, 158, 11, 0.35);
+  }
+
+  .val-cell.used {
+    background: rgba(10, 14, 23, 0.6);
+    border-color: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.05);
+    text-shadow: none;
+    box-shadow: none;
+  }
+
+  /* Overlay Question Card */
+  .q-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 13, 0.94);
+    backdrop-filter: blur(25px);
+    z-index: 1000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px;
+  }
+  .q-overlay.show { display: flex; animation: overlayIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes overlayIn { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+
+  .q-card-box {
+    max-width: 950px;
+    width: 100%;
+    background: linear-gradient(135deg, rgba(26, 32, 53, 0.8), rgba(18, 22, 36, 0.9));
+    border: 2px solid rgba(245, 158, 11, 0.5);
+    border-radius: 30px;
+    padding: 50px;
+    text-align: center;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), 0 0 60px rgba(245, 158, 11, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .q-cat { font-size: 13px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; color: var(--neon-gold); margin-bottom: 8px; }
+  .q-val { font-family: 'JetBrains Mono', monospace; font-size: clamp(36px, 5vw, 64px); font-weight: 800; color: var(--neon-gold); margin-bottom: 24px; text-shadow: 0 0 30px rgba(251, 191, 36, 0.6); }
+  .q-txt { font-family: 'Outfit', sans-serif; font-size: clamp(24px, 3.5vw, 44px); font-weight: 700; line-height: 1.4; color: #fff; margin-bottom: 30px; }
+  
+  .q-ans {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(20px, 2.8vw, 36px);
+    font-weight: 800;
+    color: var(--neon-emerald);
+    padding: 20px 40px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 2px solid rgba(16, 185, 129, 0.5);
+    border-radius: 20px;
+    display: none;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.25);
+  }
+  .q-ans.show { display: block; animation: popUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .fs-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 16px;
+    z-index: 2000;
+    transition: all 0.2s;
+  }
+  .fs-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+  .particle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1500;
+  }
+</style>
+</head>
+<body>
+
+<div class="scorebar" id="scorebar"></div>
+<div class="board" id="board"></div>
+
+<div class="q-overlay" id="qOverlay">
+  <div class="q-card-box">
+    <div class="q-cat" id="qCat">—</div>
+    <div class="q-val" id="qVal">$0</div>
+    <div class="q-txt" id="qText">—</div>
+    <div class="q-ans" id="qAnswer">—</div>
+  </div>
+</div>
+
+<button class="fs-btn" id="fsBtn" title="Pantalla completa">⤢</button>
+
+<script src="shared-games.js"></script>
+<script>
+var session = null;
+var prevState = null;
+
+function getPIN(){
+  return new URLSearchParams(window.location.search).get('pin');
+}
+
+function renderScorebar(teams){
+  var bar = document.getElementById('scorebar'); bar.innerHTML = '';
+  (teams || []).forEach(function(t){
+    var badge = document.createElement('div');
+    badge.className = 'team-badge';
+    badge.innerHTML = '<div class="team-dot" style="background:'+t.color+';color:'+t.color+';"></div>'
+      +'<span class="team-label">'+t.name+'</span>'
+      +'<span class="team-pts" style="color:'+t.color+';">'+t.score+'</span>';
+    bar.appendChild(badge);
+  });
+}
+
+function renderBoard(categories, revealed){
+  var board = document.getElementById('board'); board.innerHTML = '';
+  var VALUES = [100, 200, 300, 400, 500];
+  var revSet = {};
+  (revealed || []).forEach(function(r){ revSet[r.catIdx + '_' + r.qIdx] = true; });
+
+  var headerRow = document.createElement('div');
+  headerRow.className = 'board-row';
+  headerRow.style.flex = '0 0 auto';
+  categories.forEach(function(cat){
+    var cell = document.createElement('div');
+    cell.className = 'board-cell cat-cell';
+    cell.textContent = cat;
+    headerRow.appendChild(cell);
+  });
+  board.appendChild(headerRow);
+
+  VALUES.forEach(function(val, qIdx){
+    var row = document.createElement('div');
+    row.className = 'board-row';
+    categories.forEach(function(cat, catIdx){
+      var cell = document.createElement('div');
+      var isUsed = revSet[catIdx + '_' + qIdx];
+      cell.className = 'board-cell val-cell' + (isUsed ? ' used' : '');
+      cell.textContent = isUsed ? '' : '$' + val;
+      row.appendChild(cell);
+    });
+    board.appendChild(row);
+  });
+}
+
+function showQuestion(data){
+  if(!data) return hideQuestion();
+  var overlay = document.getElementById('qOverlay');
+  document.getElementById('qCat').textContent = data.catIdx != null && session && session.categories ? session.categories[data.catIdx] : '—';
+  document.getElementById('qVal').textContent = '$' + (data.value || 0);
+  document.getElementById('qText').textContent = data.question || '(Sin pregunta)';
+  document.getElementById('qAnswer').textContent = data.answer || '(Sin respuesta)';
+
+  if(data.showAnswer){
+    document.getElementById('qAnswer').classList.add('show');
+  } else {
+    document.getElementById('qAnswer').classList.remove('show');
+  }
+  overlay.classList.add('show');
+}
+
+function hideQuestion(){
+  document.getElementById('qOverlay').classList.remove('show');
+  document.getElementById('qAnswer').classList.remove('show');
+}
+
+function spawnParticles(count){
+  for(var i = 0; i < count; i++){
+    var p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = (20 + Math.random() * 60) + 'vw';
+    p.style.top = (30 + Math.random() * 40) + 'vh';
+    p.style.animation = 'sparkle 1s ease-out ' + (Math.random() * 0.2) + 's both';
+    p.style.background = ['#fbbf24','#10b981','#3b82f6','#f43f5e'][Math.floor(Math.random()*4)];
+    p.style.width = p.style.height = (4 + Math.random() * 6) + 'px';
+    document.body.appendChild(p);
+    setTimeout(function(){ p.remove(); }, 1200);
+  }
+}
+
+function applyState(s){
+  session = s;
+  renderScorebar(s.teams);
+  renderBoard(s.categories || [], s.revealed || []);
+
+  if(s.current_cell){
+    showQuestion(s.current_cell);
+    if(prevState && prevState.current_cell && !prevState.current_cell.showAnswer && s.current_cell.showAnswer){
+      GameEngine.sfx.reveal();
+    }
+  } else {
+    hideQuestion();
+    if(prevState && prevState.current_cell){
+      spawnParticles(25);
+    }
+  }
+  prevState = JSON.parse(JSON.stringify(s));
+}
+
+function connect(){
+  var pin = getPIN();
+  if(!pin){ document.getElementById('board').innerHTML = '<div style="text-align:center;padding:60px;font-size:20px;color:var(--text-muted);">Abre este tablero desde el Panel del Tutor de Jeopardy.</div>'; return; }
+
+  var client = GameEngine.getClient(); if(!client) return;
+
+  client.from('jeopardy_sessions').select('*').eq('pin', pin).single().then(function(res){
+    if(res.error || !res.data){
+      document.getElementById('board').innerHTML = '<div style="text-align:center;padding:60px;font-size:20px;color:var(--text-muted);">No se encontró una partida con el PIN: '+pin+'</div>';
+      return;
+    }
+    applyState(res.data);
+    GameEngine.subscribe('jeopardy_sessions', res.data.id, function(updated){ applyState(updated); });
+  });
+}
+
+document.getElementById('fsBtn').addEventListener('click', function(){
+  if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+  else { document.exitFullscreen(); }
+});
+
+connect();
+</script>
+</body>
+</html>
