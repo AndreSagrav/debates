@@ -5,8 +5,8 @@
 var GameEngine = (function(){
   'use strict';
 
-  var SUPABASE_URL = 'https://ksakdjvdqspzwjslzlnb.supabase.co';
-  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWtkanZkcXNwendqc2x6bG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzUzNjAsImV4cCI6MjEwMTQxMTM2MH0.vWm1Fto7FY8h12xspDgXjn1jOwYY8FzUEmWrP_DOmhA';
+  var SUPABASE_URL = 'https://hexrnglihkebatlshzmg.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhleHJuZ2xpaGtlYmF0bHNoem1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDQ1NDMsImV4cCI6MjEwMjQ4MDU0M30.eyfDkc6pVhlkGeI88idWLiXX-hSwI5IST8rzZegbFro';
 
   var _client = null;
   var _muted = false;
