@@ -666,6 +666,7 @@ function getMsg(){
   var pA = S.participants.find(function(p){return p.id===S.selectedA;});
   var pB = S.participants.find(function(p){return p.id===S.selectedB;});
   var q  = S.questions.find(function(q){return q.id===S.activeQ;});
+  var isDone = (S.timer.remaining === 0 && S.timer.total > 0 && !S.timer.running && _timerJustFinished);
   return {
     type:'DEBATE_STATE',
     nameA: pA?pA.name:null,
@@ -674,6 +675,8 @@ function getMsg(){
     activeQNote: q?q.note:null,
     showQNote: S.showQNote,
     timerR: S.timer.remaining, timerT: S.timer.total,
+    timerRunning: !!S.timer.running,
+    hasFinished: isDone,
     notes: ''  // questionNotes son privadas — nunca se envían al público
   };
 }
@@ -1037,6 +1040,7 @@ var pauseBtn = document.getElementById('pauseBtn');
 var resetBtn = document.getElementById('resetBtn');
 var inMin    = document.getElementById('inputMin');
 var inSec    = document.getElementById('inputSec');
+var _timerJustFinished = false;
 
 function renderTimer(){
   var r=S.timer.remaining, t=S.timer.total;
@@ -1045,20 +1049,26 @@ function renderTimer(){
   if(r<=10&&r>0){timerEl.classList.add('low');barFill.style.background='var(--red)';}
   else if(t>0&&r/t<=0.4){timerEl.classList.add('mid');barFill.style.background='var(--orange)';}
   barFill.style.width=(t>0?(r/t)*100:100)+'%';
-  broadcast();
+  writeStateBus();
+  if(publicWin&&!publicWin.closed){ publicWin.postMessage(getMsg(),'*'); }
 }
 function startTimer(){
   if(timerId) return;
   var t=(parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
   if(!t) return;
+  _timerJustFinished = false;
   S.timer.total=t; S.timer.remaining=t; S.timer.running=true; renderTimer();
   timerId=setInterval(function(){
-    if(S.timer.remaining>0){S.timer.remaining--;renderTimer();}
-    else{
+    if(S.timer.remaining>0){
+      S.timer.remaining--;
+      if(S.timer.remaining===0) _timerJustFinished = true;
+      renderTimer();
+    } else {
       clearInterval(timerId);timerId=null;S.timer.running=false;
+      _timerJustFinished = true;
       timerEl.classList.remove('mid','low');setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
       var f=0,fi=setInterval(function(){timerEl.style.opacity=timerEl.style.opacity==='0'?'1':'0';if(++f>8){clearInterval(fi);timerEl.style.opacity='1';}},250);
-      broadcast();
+      renderTimer();
     }
   },1000);
   setDis(true);startBtn.disabled=true;pauseBtn.disabled=false;
@@ -1066,11 +1076,13 @@ function startTimer(){
 function pauseTimer(){
   if(!timerId) return;
   clearInterval(timerId);timerId=null;S.timer.running=false;
-  setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;broadcast();
+  _timerJustFinished = false;
+  setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;renderTimer();
 }
 function toggleTimer(){ if(timerId) pauseTimer(); else startTimer(); }
 function resetTimer(){
   if(timerId){clearInterval(timerId);timerId=null;}
+  _timerJustFinished = false;
   S.timer.running=false;
   S.timer.remaining=(parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
   S.timer.total=S.timer.remaining;

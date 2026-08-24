@@ -1001,9 +1001,9 @@ function apply(d){
     arc.style.stroke = 'var(--deb-a)';
 
     var fin = document.getElementById('finOverlay');
-    if(r === 0 && t > 0){
+    if(d.hasFinished || (r === 0 && t > 0 && d.timerRunning === false && _justFinished)){
       if(fin) fin.classList.add('show');
-    } else if(r > 0){
+    } else {
       if(fin) fin.classList.remove('show');
     }
 
