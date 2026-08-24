@@ -1,0 +1,194 @@
+/* ════════════════════════════════════════════════════════════════════════
+   HIGH-ACCESSIBILITY & COLORBLIND-FRIENDLY DESIGN SYSTEM (WCAG AAA)
+   ════════════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap');
+
+:root {
+  /* High Contrast Dark Canvas (7:1+ Contrast Ratio) */
+  --bg-deep:        #0a0f1d;
+  --bg-canvas:      #0f172a;
+  --bg-card:        rgba(15, 23, 42, 0.92);
+  --bg-card-hover:  rgba(30, 41, 59, 0.95);
+  --border-glass:   rgba(255, 255, 255, 0.18);
+  --border-glow:    rgba(59, 130, 246, 0.5);
+  
+  /* Text Tokens - Pure High Contrast */
+  --text-main:      #ffffff;
+  --text-muted:     #cbd5e1;
+  --text-dim:       #94a3b8;
+  
+  /* Okabe-Ito Colorblind Safe Brand Palette */
+  --g-debates:      linear-gradient(135deg, #2563eb, #1d4ed8);
+  --g-quiz:         linear-gradient(135deg, #0284c7, #0369a1);
+  --g-jeopardy:     linear-gradient(135deg, #d97706, #b45309);
+  --g-millonario:   linear-gradient(135deg, #7c3aed, #5b21b6);
+  --g-ruleta:       linear-gradient(135deg, #059669, #047857);
+  --g-dijeron:      linear-gradient(135deg, #e11d48, #be123c);
+  --g-batalla:      linear-gradient(135deg, #4f46e5, #4338ca);
+  
+  /* Colorblind-Safe High Visibility Tokens */
+  --cb-blue:        #2563eb;
+  --cb-amber:       #f59e0b;
+  --cb-teal:        #0d9488;
+  --cb-rose:        #e11d48;
+  --cb-purple:      #7c3aed;
+  
+  /* Elevation Shadows */
+  --shadow-sm:      0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg:      0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.games-menu-overlay, .games-menu, .games-trigger { box-sizing: border-box; }
+
+/* ── Menu Trigger Button (High Contrast) ── */
+.games-trigger {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.games-trigger:hover {
+  background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.games-trigger .arrow {
+  font-size: 10px;
+  transition: transform 0.3s;
+}
+.games-trigger.open .arrow { transform: rotate(180deg); }
+
+/* Menu Overlay */
+.games-menu-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}
+.games-menu-overlay.open { display: block; }
+
+/* Menu Dropdown Container */
+.games-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 370px;
+  background: #0f172a;
+  border: 2px solid #334155;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+}
+.games-menu.open { display: flex; flex-direction: column; gap: 8px; }
+
+.games-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1e293b;
+  margin-bottom: 4px;
+}
+
+.games-menu-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.games-menu-mute {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #ffffff;
+}
+.games-menu-mute:hover {
+  background: #334155;
+}
+
+/* Card item inside dropdown */
+.game-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.game-card:hover {
+  background: #334155;
+  border-color: #64748b;
+  transform: translateX(4px);
+}
+
+.game-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.game-card.debates    .game-icon { background: var(--g-debates); }
+.game-card.quiz       .game-icon { background: var(--g-quiz); }
+.game-card.jeopardy   .game-icon { background: var(--g-jeopardy); }
+.game-card.millonario .game-icon { background: var(--g-millonario); }
+.game-card.ruleta     .game-icon { background: var(--g-ruleta); }
+.game-card.dijeron    .game-icon { background: var(--g-dijeron); }
+.game-card.batalla    .game-icon { background: var(--g-batalla); }
+
+.game-info { display: flex; flex-direction: column; gap: 2px; }
+.game-name { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 800; color: #ffffff; }
+.game-desc { font-size: 12px; color: #94a3b8; font-weight: 500; }
+
+.game-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.game-badge.active {
+  background: #065f46;
+  color: #34d399;
+  border: 1px solid #10b981;
+}
+
+.games-sep { height: 2px; background: #1e293b; margin: 4px 0; }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }

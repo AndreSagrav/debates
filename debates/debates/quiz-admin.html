@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Quiz Live Panel</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-games.css"/>
+<style>
+  :root {
+    --bg: #101216;
+    --surface: #191c22;
+    --s2: #21252e;
+    --border: #2d323e;
+    --ink: #e2e7f0;
+    --ink-dim: #828a9e;
+    --a: #5a88cc;
+    --red: #e63946;
+    --blue: #3a86ef;
+    --yellow: #f4a261;
+    --green: #2a9d8f;
+    --accent-green: #00e676;
+    --gold: #ffd700;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 52px 1fr;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: #161920;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+  .h-title { font-family: 'DM Serif Display', serif; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+  .h-btns { display: flex; gap: 10px; align-items: center; }
+  .btn-sm {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    transition: all .2s;
+  }
+  .btn-sm:hover { border-color: var(--a); color: var(--a); }
+  .btn-primary { background: var(--blue); color: #fff; border: none; }
+  .btn-primary:hover { opacity: .9; }
+
+  /* MAIN LAYOUT */
+  .container { display: flex; height: calc(100vh - 52px); width: 100%; overflow: hidden; }
+  .left-col { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--border); }
+  .right-col { width: 380px; padding: 24px; background: var(--surface); display: flex; flex-direction: column; gap: 16px; border-left: 1px solid var(--border); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--ink); display: flex; justify-content: space-between; align-items: center; }
+
+  /* FORM INPUTS */
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-dim); }
+  input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: var(--s2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--ink);
+    outline: none;
+  }
+  input:focus { border-color: var(--blue); }
+
+  .opts-builder { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opt-item { display: flex; align-items: center; gap: 8px; background: var(--s2); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); }
+  .opt-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-green); }
+
+  /* PIN DISPLAY & LOBBY */
+  .pin-banner {
+    background: linear-gradient(135deg, rgba(58,134,239,.15), rgba(42,157,143,.15));
+    border: 1px solid var(--blue);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+  .pin-code { font-family: 'DM Mono', monospace; font-size: 54px; font-weight: 700; letter-spacing: 6px; color: var(--blue); }
+  
+  .players-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .player-badge { background: var(--s2); border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+  /* CHART BARS */
+  .chart-container { display: flex; height: 180px; align-items: flex-end; gap: 16px; padding: 10px 0; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .bar { width: 100%; border-radius: 8px 8px 0 0; transition: height .5s ease; min-height: 4px; }
+  .bar.red { background: var(--red); }
+  .bar.blue { background: var(--blue); }
+  .bar.yellow { background: var(--yellow); }
+  .bar.green { background: var(--green); }
+  .bar-count { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; }
+
+  /* PODIUM */
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; height: 200px; margin-top: 20px; }
+  .pod-step { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 90px; border-radius: 12px 12px 0 0; padding: 10px; font-weight: 700; }
+  .pod-1 { height: 160px; background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; }
+  .pod-2 { height: 120px; background: linear-gradient(135deg, #c0c0c0, #708090); color: #000; }
+  .pod-3 { height: 90px; background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
+</style>
+</head>
+<div class="games-menu-overlay" id="gamesOverlay"></div>
+
+<header>
+  <div class="h-title">🎮 Quiz Live — Panel de Control</div>
+  <div class="h-btns">
+    <div style="position:relative; z-index:9999;">
+      <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
+      <div class="games-menu" id="gamesMenu">
+        <div class="games-menu-header">
+          <span class="games-menu-title">🎮 Zona de Juegos</span>
+          <button class="games-menu-mute" id="gamesMuteBtn" title="Sonido activado">🔊</button>
+        </div>
+        <a class="game-card debates" href="index.html">
+          <div class="game-icon">🎤</div>
+          <div class="game-info"><span class="game-name">Debates / Repaso</span><span class="game-desc">Panel de ruleta y preguntas</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <div class="games-sep"></div>
+        <a class="game-card quiz" href="quiz-admin.html">
+          <div class="game-icon">🎯</div>
+          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <span class="game-badge active">Activo</span>
+        </a>
+        <a class="game-card jeopardy" href="jeopardy-admin.html">
+          <div class="game-icon">🏆</div>
+          <div class="game-info"><span class="game-name">Jeopardy</span><span class="game-desc">Tablero de categorías y valores</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card millonario" href="millonario-admin.html">
+          <div class="game-icon">💰</div>
+          <div class="game-info"><span class="game-name">Millonario</span><span class="game-desc">¿Quién quiere ser millonario?</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card ruleta" href="ruleta-admin.html">
+          <div class="game-icon">🛞</div>
+          <div class="game-info"><span class="game-name">Ruleta de Letras</span><span class="game-desc">Adivina la palabra oculta</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card dijeron" href="dijeron-admin.html">
+          <div class="game-icon">👥</div>
+          <div class="game-info"><span class="game-name">100 Dijeron</span><span class="game-desc">Family Feud educativo</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+        <a class="game-card batalla" href="batalla-admin.html">
+          <div class="game-icon">⚔️</div>
+          <div class="game-info"><span class="game-name">Batalla</span><span class="game-desc">Equipos en tiempo real</span></div>
+          <span class="game-badge active">Ir</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- LEFT COLUMN: CREATOR & GAME CONTROL -->
+  <div class="left-col">
+
+    <!-- 1. CREAR SESIÓN / PIN BANNER -->
+    <div class="pin-banner" id="pinBanner">
+      <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink-dim);">PIN para los estudiantes</div>
+      <div class="pin-code" id="pinDisplay">----</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-top:4px;">Los alumnos deben entrar a <strong>play.html</strong> e ingresar este PIN</div>
+    </div>
+
+    <!-- 2. EDITOR DE PREGUNTAS -->
+    <div class="card">
+      <div class="card-title">📝 Creador de Preguntas del Quiz</div>
+      <div class="input-group">
+        <label>Escribe la Pregunta</label>
+        <input type="text" id="qTextInput" placeholder="Ej. ¿Cuál es el planeta más cercano al Sol?"/>
+      </div>
+      <div class="opts-builder">
+        <div class="opt-item"><input type="radio" name="correctOpt" value="0" checked/><input type="text" id="opt0Input" placeholder="Opción A (Rojo ▲)"/></div>
+        <div class="opt-item"><input type="radio" name="correctOpt" value="1"/><input type="text" id="opt1Input" placeholder="Opción B (Azul ◆)"/></div>
+        <div class="opt-item"><input type="radio" name="correctOpt" value="2"/><input type="text" id="opt2Input" placeholder="Opción C (Amarillo ●)"/></div>
+        <div class="opt-item"><input type="radio" name="correctOpt" value="3"/><input type="text" id="opt3Input" placeholder="Opción D (Verde ■)"/></div>
+      </div>
+      <button class="btn-sm btn-primary" id="addQuestionBtn" style="align-self:flex-end;">+ Agregar Pregunta</button>
+    </div>
+
+    <!-- 3. LISTA DE PREGUNTAS Y BOTÓN INICIAR -->
+    <div class="card">
+      <div class="card-title">
+        <span>Preguntas del Quiz (<span id="qCount">0</span>)</span>
+        <button class="btn-sm btn-primary" id="createSessionBtn">🚀 Iniciar Partida (Generar PIN)</button>
+      </div>
+      <div id="questionsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- 4. CONTROLES DE LA PARTIDA EN VIVO -->
+    <div class="card" id="gameControlsCard" style="display:none;">
+      <div class="card-title" id="gameStatusTitle">Estado de la Partida: LOBBY</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-sm btn-primary" id="startQuizBtn">▶ Iniciar Primera Pregunta</button>
+        <button class="btn-sm" id="showResultsBtn" style="display:none;">📊 Mostrar Resultados</button>
+        <button class="btn-sm btn-primary" id="nextQuestionBtn" style="display:none;">▶ Siguiente Pregunta</button>
+        <button class="btn-sm" id="showPodiumBtn" style="display:none;background:var(--gold);color:#000;">🏆 Ver Podio Final</button>
+      </div>
+    </div>
+
+    <!-- 5. GRÁFICO DE RESULTADOS POR PREGUNTA -->
+    <div class="card" id="resultsCard" style="display:none;">
+      <div class="card-title">Respuestas de la Clase</div>
+      <div class="chart-container">
+        <div class="bar-col"><span class="bar-count" id="count0">0</span><div class="bar red" id="bar0"></div><span>▲ A</span></div>
+        <div class="bar-col"><span class="bar-count" id="count1">0</span><div class="bar blue" id="bar1"></div><span>◆ B</span></div>
+        <div class="bar-col"><span class="bar-count" id="count2">0</span><div class="bar yellow" id="bar2"></div><span>● C</span></div>
+        <div class="bar-col"><span class="bar-count" id="count3">0</span><div class="bar green" id="bar3"></div><span>■ D</span></div>
+      </div>
+    </div>
+
+    <!-- 6. PODIO FINAL -->
+    <div class="card" id="podiumCard" style="display:none;">
+      <div class="card-title" style="text-align:center;width:100%;">🏆 ¡GANADORES DEL QUIZ!</div>
+      <div class="podium">
+        <div class="pod-step pod-2"><span style="font-size:24px;">🥈</span><span id="pod2Name">-</span></div>
+        <div class="pod-step pod-1"><span style="font-size:32px;">🥇</span><span id="pod1Name">-</span></div>
+        <div class="pod-step pod-3"><span style="font-size:20px;">🥉</span><span id="pod3Name">-</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN: PLAYERS LOBBY & LEADERBOARD -->
+  <div class="right-col">
+    <div class="card-title">👥 Jugadores Conectados (<span id="playerCount">0</span>)</div>
+    <div class="players-grid" id="playersGrid">
+      <div style="font-size:12px;color:var(--ink-dim);">Esperando a que se unan los alumnos...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var SUPABASE_URL = 'https://ksakdjvdqspzwjslzlnb.supabase.co';
+var DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWtkanZkcXNwendqc2x6bG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzUzNjAsImV4cCI6MjEwMTQxMTM2MH0.vWm1Fto7FY8h12xspDgXjn1jOwYY8FzUEmWrP_DOmhA';
+
+var supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, DEFAULT_SUPABASE_KEY) : null;
+var questions = [];
+var activeSession = null;
+
+/* CREAR PREGUNTA EN LOCAL */
+document.getElementById('addQuestionBtn').addEventListener('click', function(){
+  var qText = document.getElementById('qTextInput').value.trim();
+  var opt0 = document.getElementById('opt0Input').value.trim();
+  var opt1 = document.getElementById('opt1Input').value.trim();
+  var opt2 = document.getElementById('opt2Input').value.trim();
+  var opt3 = document.getElementById('opt3Input').value.trim();
+  var correctOpt = parseInt(document.querySelector('input[name="correctOpt"]:checked').value);
+
+  if(!qText || !opt0 || !opt1){ alert('Ingresa el texto de la pregunta y al menos 2 opciones.'); return; }
+
+  questions.push({
+    question: qText,
+    options: [opt0, opt1, opt2 || '—', opt3 || '—'],
+    correct_index: correctOpt
+  });
+
+  document.getElementById('qTextInput').value = '';
+  document.getElementById('opt0Input').value = '';
+  document.getElementById('opt1Input').value = '';
+  document.getElementById('opt2Input').value = '';
+  document.getElementById('opt3Input').value = '';
+
+  renderQuestions();
+});
+
+function renderQuestions(){
+  var list = document.getElementById('questionsList');
+  document.getElementById('qCount').textContent = questions.length;
+  list.innerHTML = '';
+  questions.forEach(function(q, i){
+    var div = document.createElement('div');
+    div.style.cssText = 'background:var(--s2);padding:10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;';
+    div.innerHTML = '<span><strong>#'+(i+1)+'</strong> '+q.question+'</span><button class="btn-sm" style="color:var(--red);" data-idx="'+i+'">&times;</button>';
+    div.querySelector('button').addEventListener('click', function(){
+      questions.splice(i, 1); renderQuestions();
+    });
+    list.appendChild(div);
+  });
+}
+
+/* GENERAR SESIÓN Y PIN */
+var localChannel = null;
+
+document.getElementById('createSessionBtn').addEventListener('click', function(){
+  if(!questions.length && document.getElementById('qTextInput').value.trim()){
+    document.getElementById('addQuestionBtn').click();
+  }
+  if(!questions.length){ alert('Agrega al menos 1 pregunta antes de iniciar.'); return; }
+
+  var pin = String(Math.floor(1000 + Math.random() * 9000));
+  var payload = {
+    id: 'session_' + Date.now(),
+    pin: pin,
+    status: 'lobby',
+    current_question: 0,
+    questions: JSON.parse(JSON.stringify(questions)),
+    players: []
+  };
+
+  activeSession = payload;
+  
+  // 1. Guardar en localStorage y canal local instantáneo (0ms)
+  try {
+    localStorage.setItem('quiz_game_' + pin, JSON.stringify(payload));
+  } catch(e){}
+
+  if(window.BroadcastChannel){
+    if(localChannel) localChannel.close();
+    localChannel = new BroadcastChannel('quiz_channel_' + pin);
+    localChannel.onmessage = function(e){
+      if(!e.data) return;
+      if(e.data.type === 'PLAYER_JOIN' && e.data.player){
+        var p = e.data.player;
+        var existing = activeSession.players.find(function(x){ return x.name.toLowerCase() === p.name.toLowerCase(); });
+        if(!existing){
+          activeSession.players.push({ name: p.name, score: 0 });
+          saveSessionState();
+          renderPlayers(activeSession.players);
+        }
+      } else if(e.data.type === 'ANSWER_SUBMIT' && e.data.response){
+        responsesForCurrentQ.push(e.data.response);
+      }
+    };
+  }
+
+  // 2. Sincronizar en Supabase usando la tabla activa 'debate_state'
+  if(supabaseClient){
+    supabaseClient.from('debate_state').upsert({ id: 'quiz_' + pin, state: payload }).then(function(res){
+      if(!res.error){
+        subscribeToSession();
+      }
+    });
+  }
+
+  // 3. MOSTRAR LA INTERFAZ INMEDIATAMENTE
+  document.getElementById('pinDisplay').textContent = pin;
+  document.getElementById('gameControlsCard').style.display = 'flex';
+  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.fanfare();
+});
+
+function saveSessionState(){
+  if(!activeSession) return;
+  try {
+    localStorage.setItem('quiz_game_' + activeSession.pin, JSON.stringify(activeSession));
+  } catch(e){}
+  if(localChannel){
+    localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession });
+  }
+  if(supabaseClient && activeSession.pin){
+    supabaseClient.from('debate_state').upsert({ id: 'quiz_' + activeSession.pin, state: activeSession }).then(function(){});
+  }
+}
+
+function subscribeToSession(){
+  if(!supabaseClient || !activeSession || !activeSession.pin) return;
+  supabaseClient.channel('admin_quiz_' + activeSession.pin)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'debate_state', filter: 'id=eq.quiz_' + activeSession.pin }, function(payload){
+      if(payload.new && payload.new.state){
+        activeSession = Object.assign({}, activeSession, payload.new.state);
+        renderPlayers(activeSession.players || []);
+      }
+    })
+    .subscribe();
+}
+
+function renderPlayers(players){
+  var grid = document.getElementById('playersGrid');
+  document.getElementById('playerCount').textContent = players.length;
+  if(!players.length){ grid.innerHTML = '<div style="font-size:12px;color:var(--ink-dim);">Esperando a que se unan los alumnos...</div>'; return; }
+  grid.innerHTML = '';
+  players.forEach(function(p){
+    var badge = document.createElement('div');
+    badge.className = 'player-badge';
+    badge.textContent = '👤 ' + p.name + ' (' + (p.score||0) + ' pts)';
+    grid.appendChild(badge);
+  });
+}
+
+/* INICIAR PREGUNTA */
+document.getElementById('startQuizBtn').addEventListener('click', function(){
+  if(!activeSession) return;
+  updateSessionStatus('question', { question_start: new Date().toISOString() });
+  document.getElementById('startQuizBtn').style.display = 'none';
+  document.getElementById('showResultsBtn').style.display = 'inline-block';
+  document.getElementById('gameStatusTitle').textContent = 'Estado: PREGUNTA ACTIVA #' + (activeSession.current_question + 1);
+});
+
+function updateSessionStatus(status, extra){
+  if(!activeSession) return;
+  activeSession.status = status;
+  if(extra) Object.assign(activeSession, extra);
+  
+  saveSessionState();
+}
+
+/* ESCUCHAR RESPUESTAS Y VER RESULTADOS */
+var responsesForCurrentQ = [];
+function subscribeToResponses(){
+  if(!supabaseClient || !activeSession) return;
+  supabaseClient.channel('responses_' + activeSession.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quiz_responses', filter: 'session_id=eq.' + activeSession.id }, function(payload){
+      if(payload.new && payload.new.question_index === activeSession.current_question){
+        responsesForCurrentQ.push(payload.new);
+      }
+    })
+    .subscribe();
+}
+
+document.getElementById('showResultsBtn').addEventListener('click', function(){
+  updateSessionStatus('results');
+  document.getElementById('showResultsBtn').style.display = 'none';
+  document.getElementById('resultsCard').style.display = 'flex';
+  
+  var isLast = activeSession.current_question >= activeSession.questions.length - 1;
+  if(isLast){
+    document.getElementById('showPodiumBtn').style.display = 'inline-block';
+  } else {
+    document.getElementById('nextQuestionBtn').style.display = 'inline-block';
+  }
+
+  // Calcular barras
+  var counts = [0, 0, 0, 0];
+  responsesForCurrentQ.forEach(function(r){ if(r.chosen_option >= 0 && r.chosen_option <= 3) counts[r.chosen_option]++; });
+  var max = Math.max(1, counts[0], counts[1], counts[2], counts[3]);
+
+  for(var i=0; i<4; i++){
+    document.getElementById('count' + i).textContent = counts[i];
+    document.getElementById('bar' + i).style.height = ((counts[i] / max) * 100) + '%';
+  }
+});
+
+/* SIGUIENTE PREGUNTA */
+document.getElementById('nextQuestionBtn').addEventListener('click', function(){
+  responsesForCurrentQ = [];
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('nextQuestionBtn').style.display = 'none';
+  document.getElementById('startQuizBtn').style.display = 'inline-block';
+  
+  var nextIdx = activeSession.current_question + 1;
+  updateSessionStatus('lobby', { current_question: nextIdx });
+  document.getElementById('gameStatusTitle').textContent = 'Estado: ESPERANDO PREGUNTA #' + (nextIdx + 1);
+});
+
+/* PODIO FINAL */
+document.getElementById('showPodiumBtn').addEventListener('click', function(){
+  updateSessionStatus('finished');
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('showPodiumBtn').style.display = 'none';
+  document.getElementById('podiumCard').style.display = 'flex';
+
+  var players = (activeSession.players || []).slice();
+  players.sort(function(a,b){ return (b.score||0) - (a.score||0); });
+
+  document.getElementById('pod1Name').textContent = players[0] ? players[0].name : '-';
+  document.getElementById('pod2Name').textContent = players[1] ? players[1].name : '-';
+  document.getElementById('pod3Name').textContent = players[2] ? players[2].name : '-';
+});
+</script>
+<script src="shared-games.js"></script>
+<script>GameEngine.initMenu();</script>
+</body>
+</html>

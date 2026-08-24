@@ -1173,31 +1173,59 @@ document.getElementById('newNameInput').addEventListener('keydown',function(e){
   if(e.key==='Enter') document.getElementById('addNameBtn').click();
 });
 
+function hasPaired(id1, id2){
+  if(!id1 || !id2 || !S.historyPairs) return false;
+  return S.historyPairs.some(function(pair){
+    return (pair[0] === id1 && pair[1] === id2) || (pair[0] === id2 && pair[1] === id1);
+  });
+}
+
+function recordPair(idA, idB){
+  if(!idA || !idB || idA === idB) return;
+  if(!S.historyPairs) S.historyPairs = [];
+  if(!hasPaired(idA, idB)){
+    S.historyPairs.push([idA, idB]);
+  }
+}
+
 function pickForRole(role){
   var oppositeId = role==='A' ? S.selectedB : S.selectedA;
   var currentId  = role==='A' ? S.selectedA : S.selectedB;
   var roleFlag   = role==='A' ? 'roleA' : 'roleB';
 
-  // Tier 1 — Ideal: no ha hecho este rol, distinto al actual y al opuesto
+  // Tier 1 — Óptimo: no ha hecho este rol, no es el oponente, no es el actual, y no se han enfrentado
   var pool = S.participants.filter(function(p){
-    return p.id !== oppositeId && p.id !== currentId && !p[roleFlag];
+    return p.id !== oppositeId && p.id !== currentId && !p[roleFlag] && (!oppositeId || !hasPaired(p.id, oppositeId));
   });
 
-  // Tier 2 — Ciclo agotado: reset de banderas, excluir actual y opuesto
+  // Tier 2 — Si todos ya se enfrentaron al oponente: priorizar quién no ha hecho este rol
+  if(!pool.length){
+    pool = S.participants.filter(function(p){
+      return p.id !== oppositeId && p.id !== currentId && !p[roleFlag];
+    });
+  }
+
+  // Tier 3 — Ciclo de rol completado (todos ya preguntaron o respondieron): resetear banderas de este rol
   if(!pool.length){
     S.participants.forEach(function(p){ p[roleFlag] = false; });
+    pool = S.participants.filter(function(p){
+      return p.id !== oppositeId && p.id !== currentId && (!oppositeId || !hasPaired(p.id, oppositeId));
+    });
+  }
+
+  // Tier 4 — Reset de rol general (excluyendo actual y opuesto)
+  if(!pool.length){
     pool = S.participants.filter(function(p){
       return p.id !== oppositeId && p.id !== currentId;
     });
   }
 
-  // Tier 3 — Permitir al opuesto (swap), sólo excluir al actual
-  //          Resuelve el caso de 2 participantes sin quedarse pegado
-  if(!pool.length){
+  // Tier 5 — Swap forzado si sólo hay 2 participantes (A <-> B)
+  if(!pool.length && S.participants.length >= 2){
     pool = S.participants.filter(function(p){ return p.id !== currentId; });
   }
 
-  // Tier 4 — Último recurso: todos (1 solo participante)
+  // Tier 6 — Caso límite (1 solo participante)
   if(!pool.length && S.participants.length > 0){
     pool = S.participants.slice();
   }
@@ -1217,6 +1245,7 @@ document.getElementById('randABtn').addEventListener('click',function(){
   chosen.roleA=true;
   // Guardia anti-autoenfrentamiento: si el elegido era B, liberar B
   if(S.selectedA === S.selectedB) S.selectedB = null;
+  if(S.selectedA && S.selectedB) recordPair(S.selectedA, S.selectedB);
   var names=S.participants.map(function(p){return p.name;});
   broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'});
   renderParticipants();broadcast();
@@ -1232,6 +1261,7 @@ document.getElementById('randBBtn').addEventListener('click',function(){
   chosen.roleB=true;
   // Guardia anti-autoenfrentamiento: si el elegido era A, liberar A
   if(S.selectedA === S.selectedB) S.selectedA = null;
+  if(S.selectedA && S.selectedB) recordPair(S.selectedA, S.selectedB);
   var names=S.participants.map(function(p){return p.name;});
   broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'});
   renderParticipants();broadcast();
