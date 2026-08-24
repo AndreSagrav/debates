@@ -259,6 +259,29 @@ function showScreen(id) {
   if(target) target.classList.add('active');
 }
 
+// Auto-completar PIN activo si existe
+(function autoDetectPin(){
+  var urlParams = new URLSearchParams(window.location.search);
+  var pinParam = urlParams.get('pin');
+  var pinInput = document.getElementById('pinInput');
+  if(pinParam && pinInput){
+    pinInput.value = pinParam;
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  var lastPin = localStorage.getItem('quiz_latest_pin');
+  if(lastPin && pinInput && !pinInput.value){
+    pinInput.value = lastPin;
+  }
+  if(supabaseClient && pinInput && !pinInput.value){
+    supabaseClient.from('debate_state').select('*').eq('id', 'quiz_active').single().then(function(res){
+      if(res.data && res.data.state && res.data.state.pin){
+        pinInput.value = res.data.state.pin;
+      }
+    });
+  }
+})();
+
 /* JOIN HANDLER */
 document.getElementById('joinBtn').addEventListener('click', function(){
   var pin = document.getElementById('pinInput').value.trim();
@@ -266,8 +289,29 @@ document.getElementById('joinBtn').addEventListener('click', function(){
   var errEl = document.getElementById('joinErrMsg');
   errEl.textContent = '';
 
-  if(!pin || pin.length < 4){ errEl.textContent = 'Ingresa un PIN válido de 4 dígitos.'; return; }
-  if(!name){ errEl.textContent = 'Ingresa tu nombre o apodo.'; return; }
+  if(!name){ errEl.textContent = 'Por favor ingresa tu nombre o apodo.'; document.getElementById('nameInput').focus(); return; }
+
+  // Si no tiene PIN, intentar buscar el PIN de la sesión más reciente
+  if(!pin){
+    pin = localStorage.getItem('quiz_latest_pin') || '';
+  }
+
+  if(!pin && supabaseClient){
+    supabaseClient.from('debate_state').select('*').eq('id', 'quiz_active').single().then(function(res){
+      if(res.data && res.data.state && res.data.state.pin){
+        document.getElementById('pinInput').value = res.data.state.pin;
+        document.getElementById('joinBtn').click();
+      } else {
+        errEl.textContent = 'No hay ninguna partida activa en este momento. Espera a que el tutor inicie el Quiz.';
+      }
+    });
+    return;
+  }
+
+  if(!pin || pin.length < 4){
+    errEl.textContent = 'Ingresa el PIN de la partida o espera que el tutor inicie.';
+    return;
+  }
   
   var localChannel = null;
 
@@ -327,11 +371,11 @@ document.getElementById('joinBtn').addEventListener('click', function(){
       if(!res.error && res.data && res.data.state){
         connectToSession(res.data.state, 'supabase');
       } else {
-        errEl.textContent = 'No se encontró ninguna partida activa con el PIN ' + pin;
+        errEl.textContent = 'No se encontró partida con el PIN ' + pin;
       }
     });
   } else {
-    errEl.textContent = 'No se encontró ninguna partida activa con el PIN ' + pin;
+    errEl.textContent = 'No se encontró partida con el PIN ' + pin;
   }
 });
 

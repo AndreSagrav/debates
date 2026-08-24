@@ -334,6 +334,7 @@ document.getElementById('createSessionBtn').addEventListener('click', function()
   // 1. Guardar en localStorage y canal local instantáneo (0ms)
   try {
     localStorage.setItem('quiz_game_' + pin, JSON.stringify(payload));
+    localStorage.setItem('quiz_latest_pin', pin);
   } catch(e){}
 
   if(window.BroadcastChannel){
@@ -357,7 +358,10 @@ document.getElementById('createSessionBtn').addEventListener('click', function()
 
   // 2. Sincronizar en Supabase usando la tabla activa 'debate_state'
   if(supabaseClient){
-    supabaseClient.from('debate_state').upsert({ id: 'quiz_' + pin, state: payload }).then(function(res){
+    supabaseClient.from('debate_state').upsert([
+      { id: 'quiz_' + pin, state: payload },
+      { id: 'quiz_active', state: payload }
+    ]).then(function(res){
       if(!res.error){
         subscribeToSession();
       }
@@ -374,12 +378,16 @@ function saveSessionState(){
   if(!activeSession) return;
   try {
     localStorage.setItem('quiz_game_' + activeSession.pin, JSON.stringify(activeSession));
+    localStorage.setItem('quiz_latest_pin', activeSession.pin);
   } catch(e){}
   if(localChannel){
     localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession });
   }
   if(supabaseClient && activeSession.pin){
-    supabaseClient.from('debate_state').upsert({ id: 'quiz_' + activeSession.pin, state: activeSession }).then(function(){});
+    supabaseClient.from('debate_state').upsert([
+      { id: 'quiz_' + activeSession.pin, state: activeSession },
+      { id: 'quiz_active', state: activeSession }
+    ]).then(function(){});
   }
 }
 
