@@ -1389,38 +1389,48 @@ document.getElementById('newQInput').addEventListener('keydown',function(e){
 document.getElementById('randQBtn').addEventListener('click',function(){
   // Pool: ALL main (non-reinforcement) questions — independent cycle from reinf
   var mainQs=S.questions.filter(function(q){return !q.reinforcement;});
+  if(!mainQs.length) return;
   var pool=mainQs.filter(function(q){return !q.used&&q.id!==S.activeQ;});
   if(!pool.length){
     // Cycle complete — reset only main question used flags
     mainQs.forEach(function(q){q.used=false;});
     pool=mainQs.filter(function(q){return q.id!==S.activeQ;});
   }
+  if(!pool.length){
+    pool = mainQs.slice();
+  }
   if(!pool.length) return;
   if(S.activeQ){var prev=S.questions.find(function(q){return q.id===S.activeQ;});if(prev)prev.used=true;}
-  S.activeQ=pool[Math.floor(Math.random()*pool.length)].id;
+  var chosenQ = pool[Math.floor(Math.random()*pool.length)];
+  S.activeQ=chosenQ.id;
+  chosenQ.used=true;
   S.showQNote=false;
-  var chosenQ=S.questions.find(function(q){return q.id===S.activeQ;});
   var mainTexts=mainQs.map(function(q){return q.text;}).filter(Boolean);
-  broadcastRoulette({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ?chosenQ.text:''});
+  broadcastRoulette({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ.text});
   checkReinforcementUnlock();renderQuestions();broadcast();
 });
 
 document.getElementById('randReinfBtn').addEventListener('click',function(){
   // Pool: ONLY reinforcement questions — independent cycle from main
   var reinfQs=S.questions.filter(function(q){return q.reinforcement;});
+  if(!reinfQs.length) return;
   var pool=reinfQs.filter(function(q){return !q.used&&q.id!==S.activeQ;});
   if(!pool.length){
     // Cycle complete — reset only reinf question used flags
     reinfQs.forEach(function(q){q.used=false;});
     pool=reinfQs.filter(function(q){return q.id!==S.activeQ;});
   }
+  if(!pool.length){
+    pool = reinfQs.slice();
+  }
   if(!pool.length) return;
   if(S.activeQ){var prev=S.questions.find(function(q){return q.id===S.activeQ;});if(prev)prev.used=true;}
-  S.activeQ=pool[Math.floor(Math.random()*pool.length)].id;
+  var chosenQ = pool[Math.floor(Math.random()*pool.length)];
+  S.activeQ=chosenQ.id;
+  chosenQ.used=true;
   S.showQNote=false;
-  var chosenQ=S.questions.find(function(q){return q.id===S.activeQ;});
   var reinfTexts=reinfQs.map(function(q){return q.text;}).filter(Boolean);
-  broadcastRoulette({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ?chosenQ.text:''});
+  broadcastRoulette({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ.text});
   checkReinforcementUnlock();renderQuestions();broadcast();
 });
 
