@@ -867,19 +867,29 @@ function loadFromSupabase(){
 
 function applyRemoteState(saved){
   if(!saved) return;
+  // Solo aplicar si el objeto remoto realmente contiene estructura de debate válida
+  var hasRemoteData = (saved.participants && saved.participants.length > 0) || (saved.questions && saved.questions.length > 0) || (saved.backupParticipants && saved.backupParticipants.length > 0);
+  var hasLocalData = S.participants.length > 0 || S.questions.length > 0 || S.backupParticipants.length > 0;
+
+  if(!hasRemoteData && hasLocalData){
+    // La base de datos estaba vacía o con datos de prueba, pero tenemos datos locales: guardar local en la nube
+    saveToSupabase();
+    return;
+  }
+
   _isRemoteUpdate = true;
-  S.participants  = (saved.participants||[]).map(function(p){return {id:p.id,name:p.name||'',used:!!p.used,roleA:!!p.roleA,roleB:!!p.roleB};});
-  S.selectedA     = saved.selectedA||null;
-  S.selectedB     = saved.selectedB||null;
-  S.questions     = (saved.questions||[]).map(function(q){
+  if(saved.participants) S.participants = saved.participants.map(function(p){return {id:p.id,name:p.name||'',used:!!p.used,roleA:!!p.roleA,roleB:!!p.roleB};});
+  if(saved.selectedA !== undefined) S.selectedA = saved.selectedA;
+  if(saved.selectedB !== undefined) S.selectedB = saved.selectedB;
+  if(saved.questions) S.questions = saved.questions.map(function(q){
     return {id:q.id,text:q.text||'',note:q.note||'',used:!!q.used,reinforcement:!!q.reinforcement};
   });
-  S.activeQ       = saved.activeQ||null;
-  S.showQNote     = saved.showQNote||false;
-  S.reinfUnlocked = saved.reinfUnlocked||false;
-  S.questionNotes = saved.questionNotes||{};
-  S.generalNotes  = saved.generalNotes||'';
-  S.backupParticipants = (saved.backupParticipants||[]).map(function(p){return {id:p.id,name:p.name||''};});
+  if(saved.activeQ !== undefined) S.activeQ = saved.activeQ;
+  if(saved.showQNote !== undefined) S.showQNote = saved.showQNote;
+  if(saved.reinfUnlocked !== undefined) S.reinfUnlocked = saved.reinfUnlocked;
+  if(saved.questionNotes) S.questionNotes = saved.questionNotes;
+  if(saved.generalNotes !== undefined) S.generalNotes = saved.generalNotes;
+  if(saved.backupParticipants) S.backupParticipants = saved.backupParticipants.map(function(p){return {id:p.id,name:p.name||''};});
   
   renderParticipants();
   renderBackupParticipants();
