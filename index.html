@@ -747,6 +747,9 @@ function broadcastRoulette(payload){
   if(publicWin&&!publicWin.closed){
     try { publicWin.postMessage(payload,'*'); }catch(e){}
   }
+  try {
+    localStorage.setItem('debate_roulette_event', JSON.stringify({p: payload, ts: Date.now()}));
+  } catch(e){}
   if(window.BroadcastChannel){
     try {
       var ch1 = new BroadcastChannel('universal_public_channel');

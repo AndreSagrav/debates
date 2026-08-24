@@ -49,11 +49,10 @@
     user-select: none;
   }
 
-  /* Universal Header */
+  /* Universal Header — limpio: solo título + pantalla completa */
   .pub-header {
-    height: 48px;
-    background: #1e2229;
-    border-bottom: 2px solid #2a2e38;
+    height: 38px;
+    background: var(--deb-ink);
     padding: 0 20px;
     display: flex;
     align-items: center;
@@ -61,41 +60,26 @@
     z-index: 100;
     flex-shrink: 0;
   }
-  .pub-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Outfit', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-    color: #fff;
-  }
-  .pub-mode-badge {
-    background: rgba(74, 111, 165, 0.2);
-    border: 1px solid rgba(74, 111, 165, 0.4);
-    color: #93c5fd;
-    padding: 4px 12px;
-    border-radius: 99px;
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .pub-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.35);
   }
   .fullscreen-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
-    padding: 5px 12px;
-    border-radius: 7px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.18);
+    color: rgba(255,255,255,.6);
+    padding: 4px 11px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
     transition: all 0.2s;
   }
-  .fullscreen-btn:hover { background: rgba(255, 255, 255, 0.2); }
+  .fullscreen-btn:hover { background: rgba(255,255,255,.18); color: #fff; }
 
   /* Main Stage & Frames */
   .widget-stage {
@@ -125,7 +109,7 @@
     color: var(--deb-ink);
     height: 100%;
     display: none !important;
-    grid-template-rows: 38px auto 1fr auto;
+    grid-template-rows: auto 1fr auto;
     overflow: hidden;
     position: relative;
   }
@@ -430,13 +414,36 @@
     font-family: 'DM Mono', monospace;
   }
 
-  @keyframes slotUp { 0%{ transform: translateY(65%); opacity: 0; } 55%{ opacity: 1; } 100%{ transform: translateY(0); opacity: 1; } }
-  @keyframes slotDown { 0%{ transform: translateY(-55%); opacity: 0; } 55%{ opacity: 1; } 100%{ transform: translateY(0); opacity: 1; } }
-  .slot-spin { animation: slotUp .1s ease both; }
-  .slot-land { animation: slotDown .4s cubic-bezier(.2,.85,.38,1) both; }
-  @keyframes qSlotUp { 0%{ transform: translateY(40%); opacity: 0; } 100%{ transform: translateY(0); opacity: 1; } }
-  .q-slot-spin { animation: qSlotUp .08s ease both; }
-  .q-slot-land { animation: qSlotUp .46s cubic-bezier(.2,.9,.4,1) both; }
+  /* ── Ruleta de Nombres ─────────────────────────────────── */
+  @keyframes slotUp { 0%{ transform: translateY(80%); opacity: 0; } 60%{ opacity: 1; } 100%{ transform: translateY(0); opacity: 1; } }
+  @keyframes slotLand { 0%{ transform: translateY(-60%); opacity: 0; } 60%{ opacity: 1; } 100%{ transform: translateY(0); opacity: 1; } }
+  .slot-spin { animation: slotUp .09s ease both; overflow: hidden; }
+  .slot-land { animation: slotLand .45s cubic-bezier(.2,.85,.38,1) both; }
+
+  /* Tarjeta parpadeante durante la ruleta */
+  .name-card.spinning {
+    background: #fff;
+    box-shadow: 0 0 0 3px var(--deb-a), 0 8px 36px rgba(74,111,165,.25);
+  }
+  .name-card.spinning.b { box-shadow: 0 0 0 3px var(--deb-b), 0 8px 36px rgba(143,90,90,.25); }
+  @keyframes cardPulse { 0%,100%{ opacity: 1; } 50%{ opacity: .7; } }
+  .name-card.spinning .nc-name { animation: cardPulse .12s linear infinite; color: var(--deb-a); font-style: italic; }
+  .name-card.spinning.b .nc-name { color: var(--deb-b); }
+
+  /* ── Ruleta de Preguntas ───────────────────────────────── */
+  @keyframes qSlotUp { 0%{ transform: translateY(50%); opacity: 0; } 100%{ transform: translateY(0); opacity: 1; } }
+  @keyframes qSlotLand { 0%{ transform: translateY(-40%) scale(.97); opacity: 0; } 70%{ opacity: 1; } 100%{ transform: translateY(0) scale(1); opacity: 1; } }
+  .q-slot-spin { animation: qSlotUp .07s ease both; }
+  .q-slot-land { animation: qSlotLand .52s cubic-bezier(.2,.9,.4,1) both; }
+
+  /* Q-band spinning shimmer */
+  .q-band.spinning-band {
+    background: linear-gradient(90deg, var(--deb-surf) 0%, #fff 50%, var(--deb-surf) 100%);
+    background-size: 200% 100%;
+    animation: qBandShimmer .18s linear infinite;
+  }
+  @keyframes qBandShimmer { 0%{ background-position: 100% 0; } 100%{ background-position: -100% 0; } }
+
   @keyframes pop { 0%{ transform: scale(.88); opacity: .15; } 100%{ transform: scale(1); opacity: 1; } }
   .name-pop { animation: pop .35s cubic-bezier(.34,1.56,.64,1); }
   .name-progress {
@@ -676,21 +683,14 @@
 <body>
 
 <header class="pub-header">
-  <div class="pub-brand">
-    <span style="font-size:22px;">📺</span>
-    <span>Vista Pública Universal</span>
-  </div>
-  <div class="pub-mode-badge" id="pubModeBadge">🎤 Debates / Repaso</div>
-  <div class="header-actions">
-    <button class="fullscreen-btn" id="fullBtn">⤢ Pantalla Completa</button>
-  </div>
+  <span class="pub-title">Actividad de Repaso</span>
+  <button class="fullscreen-btn" id="fullBtn">⤢ Pantalla Completa</button>
 </header>
 
 <div class="widget-stage">
 
   <!-- 1. DEBATES FRAME (DISEÑO ORIGINAL EDITORIAL EXACTO) -->
   <div class="widget-frame active" id="frame-debates">
-    <div class="topbar"><span class="tb-label">Actividad de Repaso</span></div>
     <div class="q-band"><div id="pubQuestion"><span class="q-empty">Esperando pregunta…</span></div></div>
     <div class="main">
       <div class="name-card a">
@@ -1015,17 +1015,31 @@ function apply(d){
 
 // Animación de Ruleta de Nombres (Slot Machine con desaceleración)
 function roulette(names, finalName, target){
-  var el = document.getElementById(target === 'A' ? 'nameA' : 'nameB');
+  var elId = target === 'A' ? 'nameA' : 'nameB';
+  var cardId = target === 'A' ? 'nameA' : 'nameB';
+  var el = document.getElementById(elId);
+  var card = el ? el.closest('.name-card') : null;
   if(!el) return;
+
+  var isB = target === 'B';
+
   if(!names || names.length < 2){
     el.textContent = finalName;
-    el.classList.remove('empty', 'roulette');
+    el.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+    el.classList.add('name-pop');
+    if(card){ card.classList.remove('spinning'); if(isB) card.classList.remove('b'); }
+    setTimeout(function(){ el.classList.remove('name-pop'); }, 400);
     if(target === 'A') pA = finalName; else pB = finalName;
+    rouletteRunning = false;
     return;
   }
+
   rouletteRunning = true;
-  el.classList.remove('empty', 'name-pop', 'slot-land');
-  var pool = names.slice(), step = 0, maxSteps = 32, baseDelay = 38;
+  el.classList.remove('empty', 'name-pop', 'slot-land', 'slot-spin');
+  if(card){ card.classList.add('spinning'); if(isB) card.classList.add('b'); }
+
+  var pool = names.slice();
+  var step = 0, maxSteps = 36, baseDelay = 36;
   function tick(){
     el.classList.remove('slot-spin', 'slot-land');
     void el.offsetWidth;
@@ -1033,17 +1047,19 @@ function roulette(names, finalName, target){
     el.textContent = pool[Math.floor(Math.random() * pool.length)];
     step++;
     if(step < maxSteps){
-      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3) * 520);
+      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 560);
     } else {
       el.classList.remove('slot-spin');
+      if(card){ card.classList.remove('spinning'); if(isB) card.classList.remove('b'); }
       void el.offsetWidth;
-      el.classList.add('slot-land');
+      el.classList.add('slot-land', 'name-pop');
       el.textContent = finalName;
+      el.classList.remove('empty', 'roulette');
       if(target === 'A') pA = finalName; else pB = finalName;
       setTimeout(function(){
-        el.classList.remove('slot-land');
+        el.classList.remove('slot-land', 'name-pop');
         rouletteRunning = false;
-      }, 450);
+      }, 480);
     }
   }
   tick();
@@ -1051,43 +1067,48 @@ function roulette(names, finalName, target){
 
 // Animación de Ruleta de Preguntas (Slot Machine con desaceleración)
 function qRoulette(questions, finalQ){
+  var band = document.querySelector('#frame-debates .q-band');
   var el = document.getElementById('pubQuestion');
   if(!el) return;
+
+  function finalize(){
+    if(band) band.classList.remove('spinning-band');
+    el.classList.remove('q-slot-spin');
+    void el.offsetWidth;
+    el.classList.add('q-slot-land');
+    renderQuestion(finalQ);
+    el.style.opacity = '1';
+    pQ = finalQ;
+    setTimeout(function(){
+      el.classList.remove('q-slot-land');
+      qRouletteRunning = false;
+    }, 530);
+  }
+
   if(!questions || questions.length < 2){
     el.style.opacity = '0';
-    setTimeout(function(){
-      el.classList.add('q-slot-land');
-      renderQuestion(finalQ);
-      el.style.opacity = '1';
-      pQ = finalQ;
-      setTimeout(function(){
-        el.classList.remove('q-slot-land');
-        qRouletteRunning = false;
-      }, 480);
-    }, 240);
+    setTimeout(finalize, 200);
     return;
   }
+
   qRouletteRunning = true;
-  var pool = questions.slice(), step = 0, maxSteps = 32, baseDelay = 32;
+  if(band) band.classList.add('spinning-band');
+  el.style.overflow = 'hidden';
+  var pool = questions.slice();
+  var step = 0, maxSteps = 36, baseDelay = 28;
   function tick(){
     el.classList.remove('q-slot-spin', 'q-slot-land');
     void el.offsetWidth;
     el.classList.add('q-slot-spin');
-    el.textContent = pool[Math.floor(Math.random() * pool.length)];
+    // Mostrar texto plano del fragmento de pregunta durante el giro
+    var sample = pool[Math.floor(Math.random() * pool.length)];
+    var preview = typeof sample === 'string' ? sample.split('\n')[0].substring(0, 70) : String(sample);
+    el.innerHTML = '<p class="q-p1">' + preview + (preview.length >= 70 ? '…' : '') + '</p>';
     step++;
     if(step < maxSteps){
-      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3) * 540);
+      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 580);
     } else {
-      el.classList.remove('q-slot-spin');
-      void el.offsetWidth;
-      el.classList.add('q-slot-land');
-      renderQuestion(finalQ);
-      el.style.opacity = '1';
-      pQ = finalQ;
-      setTimeout(function(){
-        el.classList.remove('q-slot-land');
-        qRouletteRunning = false;
-      }, 500);
+      finalize();
     }
   }
   tick();
@@ -1134,9 +1155,33 @@ window.addEventListener('storage', function(e){
       if(p && p.d) apply(p.d);
     } catch(_){}
   }
+  if(e.key === 'debate_roulette_event' && e.newValue){
+    try {
+      var evt = JSON.parse(e.newValue);
+      if(evt && evt.p && Date.now() - evt.ts < 2500){
+        if(evt.p.type === 'ROULETTE') roulette(evt.p.names, evt.p.finalName, evt.p.target);
+        if(evt.p.type === 'ROULETTE_Q') qRoulette(evt.p.questions, evt.p.finalQ);
+      }
+    } catch(_){}
+  }
 });
 
 // 4. Polling Fallback para garantizar estado continuo
+var _lastRouletteTs = 0;
+function pullRouletteFromStorage(){
+  try{
+    var raw = localStorage.getItem('debate_roulette_event');
+    if(raw){
+      var evt = JSON.parse(raw);
+      if(evt && evt.p && evt.ts && evt.ts > _lastRouletteTs && Date.now() - evt.ts < 2500){
+        _lastRouletteTs = evt.ts;
+        if(evt.p.type === 'ROULETTE') roulette(evt.p.names, evt.p.finalName, evt.p.target);
+        if(evt.p.type === 'ROULETTE_Q') qRoulette(evt.p.questions, evt.p.finalQ);
+      }
+    }
+  }catch(e){}
+}
+
 function pullFromOpener(){
   if(!window.opener || window.opener.closed) return false;
   try{
@@ -1149,6 +1194,7 @@ function pullFromOpener(){
 }
 
 function pullFromStorage(){
+  pullRouletteFromStorage();
   try{
     var raw = localStorage.getItem('debate_pub_state');
     if(raw){
