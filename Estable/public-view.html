@@ -921,46 +921,87 @@ function switchWidgetMode(mode){
   }
 }
 
+var _lastRenderedQText = null;
+function renderQuestion(text){
+  var qEl = document.getElementById('pubQuestion');
+  if(!qEl) return;
+  if(text === _lastRenderedQText) return;
+  _lastRenderedQText = text;
+  if(!text){
+    qEl.innerHTML = '<span class="q-empty">Esperando pregunta…</span>';
+    return;
+  }
+  var raw = String(text);
+  var parts = raw.split(/\n\s*\n/);
+  var html = '';
+  for(var i=0; i<parts.length; i++){
+    var seg = parts[i];
+    if(!seg.trim()) continue;
+    var cls = i === 0 ? 'q-p1' : 'q-p2';
+    html += '<p class="' + cls + '">' + seg.replace(/\n/g, '<br>') + '</p>';
+  }
+  if(!html){
+    qEl.innerHTML = '<span class="q-empty">Esperando pregunta…</span>';
+  } else {
+    qEl.innerHTML = html;
+  }
+}
+
 var _pubTimerInterval = null;
 var _currentRemaining = 0;
 var _currentTotal = 0;
 var _isTimerRunning = false;
+var _lastTimerProgress = null;
 
 function renderTimerUI(r, t, isRunning, isDone){
   var tEl = document.getElementById('pubTimer');
   if(tEl && arc){
-    tEl.textContent = String(Math.floor(r/60)).padStart(2, '0') + ':' + String(r%60).padStart(2, '0');
-    tEl.classList.remove('glow', 'low');
-    arc.style.stroke = 'var(--deb-a)';
+    var text = String(Math.floor(r/60)).padStart(2, '0') + ':' + String(r%60).padStart(2, '0');
+    if(tEl.textContent !== text) tEl.textContent = text;
 
     var fin = document.getElementById('finOverlay');
     if(isDone || (r === 0 && t > 0 && !isRunning)){
-      if(fin) fin.classList.add('show');
+      if(fin && !fin.classList.contains('show')) fin.classList.add('show');
     } else {
-      if(fin) fin.classList.remove('show');
+      if(fin && fin.classList.contains('show')) fin.classList.remove('show');
     }
 
     if(r <= 10 && r > 0){
-      tEl.classList.add('low');
+      if(!tEl.classList.contains('low')) { tEl.classList.add('low'); tEl.classList.remove('glow'); }
       arc.style.stroke = 'var(--deb-red)';
     } else if(r <= 30 && r > 10){
-      tEl.classList.add('glow');
+      if(!tEl.classList.contains('glow')) { tEl.classList.add('glow'); tEl.classList.remove('low'); }
       arc.style.stroke = 'var(--deb-orange)';
+    } else {
+      tEl.classList.remove('low', 'glow');
+      arc.style.stroke = 'var(--deb-a)';
     }
-    arc.style.strokeDashoffset = t > 0 ? (CIRC * (1 - r/t)) : 0;
+
+    var offset = t > 0 ? (CIRC * (1 - r/t)) : 0;
+    if(_lastTimerProgress !== offset){
+      arc.style.strokeDashoffset = offset;
+      _lastTimerProgress = offset;
+    }
   }
 
   var nameAProg = document.getElementById('nameAProgress');
   var nameBProg = document.getElementById('nameBProgress');
   if(nameAProg && nameBProg){
-    nameAProg.classList.remove('active', 'animating');
-    nameBProg.classList.remove('active', 'animating', 'b-active');
     if(r > 0 && t > 0 && isRunning){
       if(r >= t/2){
-        nameAProg.classList.add('active', 'animating');
+        if(!nameAProg.classList.contains('active')){
+          nameAProg.classList.add('active', 'animating');
+          nameBProg.classList.remove('active', 'animating', 'b-active');
+        }
       } else {
-        nameBProg.classList.add('active', 'animating', 'b-active');
+        if(!nameBProg.classList.contains('active')){
+          nameBProg.classList.add('active', 'animating', 'b-active');
+          nameAProg.classList.remove('active', 'animating');
+        }
       }
+    } else {
+      nameAProg.classList.remove('active', 'animating');
+      nameBProg.classList.remove('active', 'animating', 'b-active');
     }
   }
 }
@@ -976,7 +1017,11 @@ function syncPubTimer(r, t, isRunning, isDone, ts){
         targetRemaining = Math.max(0, r - elapsed);
       }
     }
-    _currentRemaining = targetRemaining;
+    
+    // Solo recalibrar si hay una desviación mayor a 1 segundo para evitar saltos o parpadeos
+    if(!_isTimerRunning || Math.abs(_currentRemaining - targetRemaining) > 1){
+      _currentRemaining = targetRemaining;
+    }
     _isTimerRunning = true;
     renderTimerUI(_currentRemaining, _currentTotal, true, false);
 

@@ -852,6 +852,8 @@ function initSupabase(key){
   return false;
 }
 
+var _myClientId = 'c_' + Math.random().toString(36).substring(2, 9);
+
 function saveToSupabase(immediate){
   if(!supabaseClient || _isRemoteUpdate) return;
   if(_supabaseTimer) clearTimeout(_supabaseTimer);
@@ -865,6 +867,7 @@ function saveToSupabase(immediate){
     var payload = {
       id: 'default',
       data: {
+        clientId: _myClientId,
         // Datos de administración
         participants: S.participants, 
         selectedA: S.selectedA, 
@@ -922,6 +925,9 @@ function loadFromSupabase(){
 
 function applyRemoteState(saved){
   if(!saved) return;
+  // Ignorar nuestro propio eco si viniera por polling
+  if(saved.clientId === _myClientId && _isRemoteUpdate === false) return;
+
   // Solo aplicar si el objeto remoto realmente contiene estructura de debate válida
   var hasRemoteData = (saved.participants && saved.participants.length > 0) || (saved.questions && saved.questions.length > 0) || (saved.backupParticipants && saved.backupParticipants.length > 0);
   var hasLocalData = S.participants.length > 0 || S.questions.length > 0 || S.backupParticipants.length > 0;
@@ -973,6 +979,7 @@ function subscribeSupabaseRealtime(){
     supabaseClient.channel('debate_state_channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state' }, function(payload){
         if(payload.new && payload.new.data){
+          if(payload.new.data.clientId === _myClientId) return; // Filtro anti-bucle
           applyRemoteState(payload.new.data);
         }
       })
