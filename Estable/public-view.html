@@ -921,6 +921,89 @@ function switchWidgetMode(mode){
   }
 }
 
+var _pubTimerInterval = null;
+var _currentRemaining = 0;
+var _currentTotal = 0;
+var _isTimerRunning = false;
+
+function renderTimerUI(r, t, isRunning, isDone){
+  var tEl = document.getElementById('pubTimer');
+  if(tEl && arc){
+    tEl.textContent = String(Math.floor(r/60)).padStart(2, '0') + ':' + String(r%60).padStart(2, '0');
+    tEl.classList.remove('glow', 'low');
+    arc.style.stroke = 'var(--deb-a)';
+
+    var fin = document.getElementById('finOverlay');
+    if(isDone || (r === 0 && t > 0 && !isRunning)){
+      if(fin) fin.classList.add('show');
+    } else {
+      if(fin) fin.classList.remove('show');
+    }
+
+    if(r <= 10 && r > 0){
+      tEl.classList.add('low');
+      arc.style.stroke = 'var(--deb-red)';
+    } else if(r <= 30 && r > 10){
+      tEl.classList.add('glow');
+      arc.style.stroke = 'var(--deb-orange)';
+    }
+    arc.style.strokeDashoffset = t > 0 ? (CIRC * (1 - r/t)) : 0;
+  }
+
+  var nameAProg = document.getElementById('nameAProgress');
+  var nameBProg = document.getElementById('nameBProgress');
+  if(nameAProg && nameBProg){
+    nameAProg.classList.remove('active', 'animating');
+    nameBProg.classList.remove('active', 'animating', 'b-active');
+    if(r > 0 && t > 0 && isRunning){
+      if(r >= t/2){
+        nameAProg.classList.add('active', 'animating');
+      } else {
+        nameBProg.classList.add('active', 'animating', 'b-active');
+      }
+    }
+  }
+}
+
+function syncPubTimer(r, t, isRunning, isDone, ts){
+  _currentTotal = t;
+  
+  if(isRunning){
+    var targetRemaining = r;
+    if(ts && typeof ts === 'number'){
+      var elapsed = Math.floor((Date.now() - ts) / 1000);
+      if(elapsed > 0 && elapsed < 60){
+        targetRemaining = Math.max(0, r - elapsed);
+      }
+    }
+    _currentRemaining = targetRemaining;
+    _isTimerRunning = true;
+    renderTimerUI(_currentRemaining, _currentTotal, true, false);
+
+    if(!_pubTimerInterval){
+      _pubTimerInterval = setInterval(function(){
+        if(_currentRemaining > 0){
+          _currentRemaining--;
+          renderTimerUI(_currentRemaining, _currentTotal, true, false);
+        } else {
+          clearInterval(_pubTimerInterval);
+          _pubTimerInterval = null;
+          _isTimerRunning = false;
+          renderTimerUI(0, _currentTotal, false, true);
+        }
+      }, 1000);
+    }
+  } else {
+    if(_pubTimerInterval){
+      clearInterval(_pubTimerInterval);
+      _pubTimerInterval = null;
+    }
+    _isTimerRunning = false;
+    _currentRemaining = r;
+    renderTimerUI(r, t, false, isDone);
+  }
+}
+
 function renderQuestion(text){
   var qEl = document.getElementById('pubQuestion');
   if(!qEl) return;
@@ -965,10 +1048,14 @@ function apply(d){
     if(pBObj) resolvedNameB = pBObj.name;
   }
 
-  var resolvedQ = d.questionText || d.activeQ;
-  if(resolvedQ && d.questions && d.activeQ){
-    var qObj = d.questions.find(function(q){ return q.id === d.activeQ; });
-    if(qObj) resolvedQ = qObj.text;
+  var resolvedQ = d.questionText || d.activeQText;
+  if(!resolvedQ && d.activeQ){
+    if(d.questions && Array.isArray(d.questions)){
+      var qObj = d.questions.find(function(q){ return q.id === d.activeQ || q.text === d.activeQ; });
+      resolvedQ = qObj ? qObj.text : d.activeQ;
+    } else {
+      resolvedQ = d.activeQ;
+    }
   }
 
   // 1. Pregunta Activa
@@ -1010,45 +1097,13 @@ function apply(d){
     }
   }
 
-  // 4. Temporizador y Luces de Progreso
+  // 4. Temporizador y Sincronización en Tiempo Real
   var r = d.timerR != null ? d.timerR : 0;
   var t = d.timerT != null ? d.timerT : 1;
-  var tEl = document.getElementById('pubTimer');
-  if(tEl && arc){
-    tEl.textContent = String(Math.floor(r/60)).padStart(2, '0') + ':' + String(r%60).padStart(2, '0');
-    tEl.classList.remove('glow', 'low');
-    arc.style.stroke = 'var(--deb-a)';
+  var isRunning = !!d.timerRunning;
+  var isDone = !!d.hasFinished;
 
-    var fin = document.getElementById('finOverlay');
-    if(d.hasFinished || (r === 0 && t > 0 && d.timerRunning === false)){
-      if(fin) fin.classList.add('show');
-    } else {
-      if(fin) fin.classList.remove('show');
-    }
-
-    if(r <= 10 && r > 0){
-      tEl.classList.add('low');
-      arc.style.stroke = 'var(--deb-red)';
-    } else if(r <= 30 && r > 10){
-      tEl.classList.add('glow');
-      arc.style.stroke = 'var(--deb-orange)';
-    }
-    arc.style.strokeDashoffset = t > 0 ? (CIRC * (1 - r/t)) : 0;
-  }
-
-  var nameAProg = document.getElementById('nameAProgress');
-  var nameBProg = document.getElementById('nameBProgress');
-  if(nameAProg && nameBProg){
-    nameAProg.classList.remove('active', 'animating');
-    nameBProg.classList.remove('active', 'animating', 'b-active');
-    if(r > 0 && t > 0){
-      if(r >= t/2){
-        nameAProg.classList.add('active', 'animating');
-      } else {
-        nameBProg.classList.add('active', 'animating', 'b-active');
-      }
-    }
-  }
+  syncPubTimer(r, t, isRunning, isDone, d.timerTs);
 
   // 5. Notas Públicas
   var nEl = document.getElementById('pubNotes');

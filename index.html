@@ -852,10 +852,11 @@ function initSupabase(key){
   return false;
 }
 
-function saveToSupabase(){
+function saveToSupabase(immediate){
   if(!supabaseClient || _isRemoteUpdate) return;
   if(_supabaseTimer) clearTimeout(_supabaseTimer);
-  _supabaseTimer = setTimeout(function(){
+  
+  var doSave = function(){
     var pA = S.participants.find(function(p){return p.id===S.selectedA;});
     var pB = S.participants.find(function(p){return p.id===S.selectedB;});
     var q  = S.questions.find(function(q){return q.id===S.activeQ;});
@@ -865,21 +866,29 @@ function saveToSupabase(){
       id: 'default',
       data: {
         // Datos de administración
-        participants: S.participants, selectedA: S.selectedA, selectedB: S.selectedB,
-        questions: S.questions, activeQ: S.activeQ, showQNote: S.showQNote,
-        reinfUnlocked: S.reinfUnlocked, questionNotes: S.questionNotes,
-        generalNotes: S.generalNotes, backupParticipants: S.backupParticipants,
+        participants: S.participants, 
+        selectedA: S.selectedA, 
+        selectedB: S.selectedB,
+        questions: S.questions, 
+        activeQ: S.activeQ,          // UUID original de la pregunta activa
+        activeQId: S.activeQ,        // Identificador explícito
+        showQNote: S.showQNote,
+        reinfUnlocked: S.reinfUnlocked, 
+        questionNotes: S.questionNotes,
+        generalNotes: S.generalNotes, 
+        backupParticipants: S.backupParticipants,
         
         // Datos resueltos para cualquier dispositivo remoto (móviles, proyectores, laptops)
         nameA: pA ? pA.name : null,
         nameB: pB ? pB.name : null,
-        activeQ: q ? q.text : null,
         questionText: q ? q.text : null,
+        activeQText: q ? q.text : null,
         activeQNote: q ? q.note : null,
         showQNote: S.showQNote,
         timerR: S.timer.remaining,
         timerT: S.timer.total,
         timerRunning: !!S.timer.running,
+        timerTs: Date.now(),
         hasFinished: isDone,
         activeMode: 'debates'
       },
@@ -888,11 +897,15 @@ function saveToSupabase(){
     supabaseClient.from('debate_state').upsert(payload).then(function(res){
       if(res.error){
         console.warn('Supabase sync error:', res.error);
-      } else {
-        console.log('✅ Guardado en Supabase con éxito');
       }
     });
-  }, 200);
+  };
+
+  if(immediate){
+    doSave();
+  } else {
+    _supabaseTimer = setTimeout(doSave, 150);
+  }
 }
 
 function loadFromSupabase(){
@@ -902,7 +915,7 @@ function loadFromSupabase(){
       applyRemoteState(res.data.data);
     } else {
       // Si la base de datos está vacía, subir el estado local actual como primer registro
-      saveToSupabase();
+      saveToSupabase(true);
     }
   });
 }
@@ -915,7 +928,7 @@ function applyRemoteState(saved){
 
   if(!hasRemoteData && hasLocalData){
     // La base de datos estaba vacía o con datos de prueba, pero tenemos datos locales: guardar local en la nube
-    saveToSupabase();
+    saveToSupabase(true);
     return;
   }
 
@@ -926,7 +939,21 @@ function applyRemoteState(saved){
   if(saved.questions) S.questions = saved.questions.map(function(q){
     return {id:q.id,text:q.text||'',note:q.note||'',used:!!q.used,reinforcement:!!q.reinforcement};
   });
-  if(saved.activeQ !== undefined) S.activeQ = saved.activeQ;
+  
+  if(saved.activeQId !== undefined && saved.activeQId !== null){
+    S.activeQ = saved.activeQId;
+  } else if(saved.activeQ !== undefined && saved.activeQ !== null){
+    var match = S.questions.find(function(q){ return q.id === saved.activeQ; });
+    if(match){
+      S.activeQ = match.id;
+    } else {
+      var matchByText = S.questions.find(function(q){ return q.text === saved.activeQ; });
+      S.activeQ = matchByText ? matchByText.id : saved.activeQ;
+    }
+  } else {
+    S.activeQ = null;
+  }
+
   if(saved.showQNote !== undefined) S.showQNote = saved.showQNote;
   if(saved.reinfUnlocked !== undefined) S.reinfUnlocked = saved.reinfUnlocked;
   if(saved.questionNotes) S.questionNotes = saved.questionNotes;
@@ -1084,18 +1111,25 @@ function startTimer(){
   var t=(parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
   if(!t) return;
   _timerJustFinished = false;
-  S.timer.total=t; S.timer.remaining=t; S.timer.running=true; renderTimer();
+  S.timer.total=t; S.timer.remaining=t; S.timer.running=true; 
+  renderTimer();
+  saveToSupabase(true);
   timerId=setInterval(function(){
     if(S.timer.remaining>0){
       S.timer.remaining--;
       if(S.timer.remaining===0) _timerJustFinished = true;
       renderTimer();
+      // Guardar en Supabase cada 3 segundos durante la marcha para mantener calibración
+      if(S.timer.remaining % 3 === 0){
+        saveToSupabase(false);
+      }
     } else {
       clearInterval(timerId);timerId=null;S.timer.running=false;
       _timerJustFinished = true;
       timerEl.classList.remove('mid','low');setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
       var f=0,fi=setInterval(function(){timerEl.style.opacity=timerEl.style.opacity==='0'?'1':'0';if(++f>8){clearInterval(fi);timerEl.style.opacity='1';}},250);
       renderTimer();
+      saveToSupabase(true);
     }
   },1000);
   setDis(true);startBtn.disabled=true;pauseBtn.disabled=false;
@@ -1104,7 +1138,9 @@ function pauseTimer(){
   if(!timerId) return;
   clearInterval(timerId);timerId=null;S.timer.running=false;
   _timerJustFinished = false;
-  setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;renderTimer();
+  setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
+  renderTimer();
+  saveToSupabase(true);
 }
 function toggleTimer(){ if(timerId) pauseTimer(); else startTimer(); }
 function resetTimer(){
@@ -1116,6 +1152,7 @@ function resetTimer(){
   timerEl.style.opacity='1';timerEl.classList.remove('mid','low');
   setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
   renderTimer();
+  saveToSupabase(true);
 }
 function setDis(v){inMin.disabled=v;inSec.disabled=v;}
 
