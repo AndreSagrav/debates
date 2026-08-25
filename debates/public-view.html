@@ -952,42 +952,61 @@ function apply(d){
     switchWidgetMode(d.activeMode);
   }
 
+  // Resolver nombres si vienen como ID o directamente
+  var resolvedNameA = d.nameA;
+  if(!resolvedNameA && d.selectedA && d.participants){
+    var pAObj = d.participants.find(function(p){ return p.id === d.selectedA; });
+    if(pAObj) resolvedNameA = pAObj.name;
+  }
+
+  var resolvedNameB = d.nameB;
+  if(!resolvedNameB && d.selectedB && d.participants){
+    var pBObj = d.participants.find(function(p){ return p.id === d.selectedB; });
+    if(pBObj) resolvedNameB = pBObj.name;
+  }
+
+  var resolvedQ = d.questionText || d.activeQ;
+  if(resolvedQ && d.questions && d.activeQ){
+    var qObj = d.questions.find(function(q){ return q.id === d.activeQ; });
+    if(qObj) resolvedQ = qObj.text;
+  }
+
   // 1. Pregunta Activa
   if(!qRouletteRunning){
     var qEl = document.getElementById('pubQuestion');
-    if(qEl && d.activeQ !== pQ){
-      renderQuestion(d.activeQ);
-      pQ = d.activeQ;
+    if(qEl && resolvedQ !== pQ){
+      renderQuestion(resolvedQ);
+      pQ = resolvedQ;
     }
   }
 
   // 2. Participante A
   if(!rouletteRunningA){
     var nA = document.getElementById('nameA');
-    if(nA && d.nameA !== pA){
-      if(d.nameA){
-        nA.textContent = d.nameA;
+    if(nA && resolvedNameA !== pA){
+      if(resolvedNameA){
+        nA.textContent = resolvedNameA;
         nA.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
       } else {
         nA.textContent = 'Esperando…';
         nA.classList.add('empty');
       }
-      pA = d.nameA;
+      pA = resolvedNameA;
     }
   }
 
   // 3. Participante B
   if(!rouletteRunningB){
     var nB = document.getElementById('nameB');
-    if(nB && d.nameB !== pB){
-      if(d.nameB){
-        nB.textContent = d.nameB;
+    if(nB && resolvedNameB !== pB){
+      if(resolvedNameB){
+        nB.textContent = resolvedNameB;
         nB.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
       } else {
         nB.textContent = 'Esperando…';
         nB.classList.add('empty');
       }
-      pB = d.nameB;
+      pB = resolvedNameB;
     }
   }
 
@@ -1001,7 +1020,7 @@ function apply(d){
     arc.style.stroke = 'var(--deb-a)';
 
     var fin = document.getElementById('finOverlay');
-    if(d.hasFinished || (r === 0 && t > 0 && d.timerRunning === false && _justFinished)){
+    if(d.hasFinished || (r === 0 && t > 0 && d.timerRunning === false)){
       if(fin) fin.classList.add('show');
     } else {
       if(fin) fin.classList.remove('show');
@@ -1311,31 +1330,53 @@ if(finOverlay){
 // 5. Supabase Realtime Fallback (Cloud)
 var SUPABASE_URL = 'https://hexrnglihkebatlshzmg.supabase.co';
 var DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhleHJuZ2xpaGtlYmF0bHNoem1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDQ1NDMsImV4cCI6MjEwMjQ4MDU0M30.eyfDkc6pVhlkGeI88idWLiXX-hSwI5IST8rzZegbFro';
+var supabaseClient = null;
 if(window.supabase){
   try {
-    var supabaseClient = window.supabase.createClient(SUPABASE_URL, DEFAULT_SUPABASE_KEY);
-    supabaseClient.channel('universal_public')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state', filter: 'id=eq.default' }, function(payload){
-        if(payload.new){
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, DEFAULT_SUPABASE_KEY);
+    supabaseClient.channel('universal_public_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state' }, function(payload){
+        if(!payload.new) return;
+        if(payload.new.id === 'default'){
           var st = payload.new.data || payload.new.state;
           if(st){
             if(st.activeMode) switchWidgetMode(st.activeMode);
             apply(st);
           }
+        } else if(payload.new.id === 'debate_roulette'){
+          if(payload.new.data && payload.new.data.payload && payload.new.data.ts && Date.now() - payload.new.data.ts < 3500){
+            _lastRouletteTs = payload.new.data.ts;
+            var p = payload.new.data.payload;
+            if(p.type === 'ROULETTE') roulette(p.names, p.finalName, p.target);
+            if(p.type === 'ROULETTE_Q') qRoulette(p.questions, p.finalQ);
+          }
         }
       })
       .subscribe();
 
-    // Carga inicial directa de Supabase
-    supabaseClient.from('debate_state').select('*').eq('id', 'default').single().then(function(res){
-      if(res.data){
-        var st = res.data.data || res.data.state;
-        if(st){
-          if(st.activeMode) switchWidgetMode(st.activeMode);
-          apply(st);
+    function pullFromSupabaseCloud(){
+      if(!supabaseClient) return;
+      supabaseClient.from('debate_state').select('*').in('id', ['default', 'debate_roulette']).then(function(res){
+        if(res.data && res.data.length > 0){
+          res.data.forEach(function(row){
+            if(row.id === 'default'){
+              var st = row.data || row.state;
+              if(st) apply(st);
+            } else if(row.id === 'debate_roulette'){
+              if(row.data && row.data.payload && row.data.ts && row.data.ts > _lastRouletteTs && Date.now() - row.data.ts < 3500){
+                _lastRouletteTs = row.data.ts;
+                var p = row.data.payload;
+                if(p.type === 'ROULETTE') roulette(p.names, p.finalName, p.target);
+                if(p.type === 'ROULETTE_Q') qRoulette(p.questions, p.finalQ);
+              }
+            }
+          });
         }
-      }
-    });
+      });
+    }
+
+    pullFromSupabaseCloud();
+    setInterval(pullFromSupabaseCloud, 1200);
   } catch(e){}
 }
 

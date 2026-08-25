@@ -761,6 +761,14 @@ function broadcastRoulette(payload){
       ch2.postMessage(payload);
     } catch(e){}
   }
+  // Transmitir a Supabase para dispositivos remotos en otras redes / celulares
+  if(supabaseClient){
+    supabaseClient.from('debate_state').upsert({
+      id: 'debate_roulette',
+      data: { payload: payload, ts: Date.now() },
+      updated_at: new Date().toISOString()
+    }).then(function(){});
+  }
 }
 
 function writeStateBus(){
@@ -848,13 +856,32 @@ function saveToSupabase(){
   if(!supabaseClient || _isRemoteUpdate) return;
   if(_supabaseTimer) clearTimeout(_supabaseTimer);
   _supabaseTimer = setTimeout(function(){
+    var pA = S.participants.find(function(p){return p.id===S.selectedA;});
+    var pB = S.participants.find(function(p){return p.id===S.selectedB;});
+    var q  = S.questions.find(function(q){return q.id===S.activeQ;});
+    var isDone = (S.timer.remaining === 0 && S.timer.total > 0 && !S.timer.running && _timerJustFinished);
+
     var payload = {
       id: 'default',
       data: {
+        // Datos de administración
         participants: S.participants, selectedA: S.selectedA, selectedB: S.selectedB,
         questions: S.questions, activeQ: S.activeQ, showQNote: S.showQNote,
         reinfUnlocked: S.reinfUnlocked, questionNotes: S.questionNotes,
-        generalNotes: S.generalNotes, backupParticipants: S.backupParticipants
+        generalNotes: S.generalNotes, backupParticipants: S.backupParticipants,
+        
+        // Datos resueltos para cualquier dispositivo remoto (móviles, proyectores, laptops)
+        nameA: pA ? pA.name : null,
+        nameB: pB ? pB.name : null,
+        activeQ: q ? q.text : null,
+        questionText: q ? q.text : null,
+        activeQNote: q ? q.note : null,
+        showQNote: S.showQNote,
+        timerR: S.timer.remaining,
+        timerT: S.timer.total,
+        timerRunning: !!S.timer.running,
+        hasFinished: isDone,
+        activeMode: 'debates'
       },
       updated_at: new Date().toISOString()
     };
@@ -865,7 +892,7 @@ function saveToSupabase(){
         console.log('✅ Guardado en Supabase con éxito');
       }
     });
-  }, 250);
+  }, 200);
 }
 
 function loadFromSupabase(){
