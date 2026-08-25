@@ -735,17 +735,23 @@
   .podium-3 { height: 150px; background: linear-gradient(135deg, #b45309, #78350f); color: #fff; font-size: 18px; }
 
   /* ═══════════════════════════════════════════════════════════
-     RESPONSIVE DESIGN & MOBILE OPTIMIZATIONS
+     RESPONSIVE DESIGN & TABLET / MOBILE OPTIMIZATIONS
      ═══════════════════════════════════════════════════════════ */
-  @media (max-width: 820px) {
+  @media (max-width: 1100px), (max-height: 850px) {
     body {
       height: 100vh;
       height: 100dvh;
       overflow-y: auto;
       user-select: auto;
     }
+    .widget-stage {
+      flex: 1;
+      height: auto;
+      min-height: calc(100dvh - 42px);
+      overflow: visible;
+    }
     .pub-header {
-      padding: 0 12px;
+      padding: 0 16px;
       height: 38px;
     }
     .pub-title {
@@ -762,39 +768,39 @@
       min-height: calc(100dvh - 38px);
       display: flex !important;
       flex-direction: column;
+      justify-content: space-between;
+      overflow: visible;
     }
     #frame-debates.active {
       display: flex !important;
     }
     #frame-debates .q-band {
-      padding: 10px 14px;
-      min-height: auto;
+      padding: 10px 16px;
+      min-height: 55px;
+      flex-shrink: 0;
     }
     #pubQuestion {
-      padding: 0;
+      padding: 0 10px;
     }
     .q-p1 {
-      font-size: clamp(17px, 4.5vw, 22px);
+      font-size: clamp(17px, 3vw, 24px);
       line-height: 1.35;
       text-align: left;
     }
     .q-p2 {
-      font-size: clamp(13px, 3.5vw, 17px);
+      font-size: clamp(13px, 2.2vw, 18px);
       line-height: 1.35;
       text-align: left;
     }
     #frame-debates .main {
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      gap: 10px;
-      flex: 1;
-      justify-content: center;
+      padding: 8px 16px;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .name-card {
-      width: 100%;
-      min-height: 65px;
-      padding: 12px 14px;
+      min-height: clamp(60px, 12vh, 100px);
+      padding: 10px 14px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
@@ -803,53 +809,62 @@
       margin-bottom: 2px;
     }
     .nc-name {
-      font-size: clamp(19px, 5.5vw, 26px);
+      font-size: clamp(18px, 3.5vw, 28px);
     }
     .center-col {
-      padding: 4px 0;
+      padding: 2px 8px;
       gap: 2px;
     }
     #arcSvg {
-      width: 130px;
-      height: 130px;
+      width: clamp(100px, 16vh, 150px);
+      height: clamp(100px, 16vh, 150px);
     }
     #arcBg, #arcProg {
       stroke-width: 12;
     }
     #pubTimer {
-      font-size: 38px;
+      font-size: clamp(32px, 4.5vw, 46px);
       letter-spacing: -1px;
     }
     #pubTimer.low {
-      font-size: 42px;
+      font-size: clamp(36px, 5vw, 50px);
     }
     @keyframes alertPulse {
-      0%,100%{ font-size: 38px; text-shadow: none; }
-      50%{ font-size: 44px; text-shadow: 0 0 20px rgba(192,48,48,.8); }
+      0%,100%{ font-size: clamp(32px, 4.5vw, 46px); text-shadow: none; }
+      50%{ font-size: clamp(38px, 5.2vw, 54px); text-shadow: 0 0 20px rgba(192,48,48,.8); }
     }
     .vs {
       font-size: 8.5px;
       letter-spacing: 2px;
     }
+
     #frame-debates .bottom {
-      padding: 10px 14px;
-      min-height: auto;
+      padding: 10px 16px;
+      min-height: 55px;
+      flex-shrink: 0;
+      width: 100%;
+      background: var(--deb-surf2);
+      border-top: 2px solid var(--deb-bord);
+      position: relative;
+      z-index: 20;
     }
     .b-row {
       padding: 0;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
+      gap: 8px;
+    }
+    .b-lbl {
+      font-size: 10px;
+      letter-spacing: 2px;
     }
     .b-text {
-      font-size: clamp(13px, 3.5vw, 16px);
+      font-size: clamp(13px, 2.5vw, 17px);
       text-align: left;
     }
     #qNoteRow {
       padding: 4px 0 0 0;
     }
     #pubQNote {
-      font-size: clamp(13px, 3.5vw, 16px);
+      font-size: clamp(13px, 2.5vw, 17px);
       text-align: left;
     }
 
@@ -894,6 +909,27 @@
     }
     .dijeron-answers-list {
       max-width: 100%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    #frame-debates .main {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+    }
+    .name-card {
+      width: 100%;
+      min-height: 65px;
+    }
+    .nc-name {
+      font-size: clamp(19px, 5.5vw, 26px);
+    }
+    .b-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
     }
   }
 </style>
