@@ -783,7 +783,8 @@ function getMsg(){
     timerR: S.timer.remaining, timerT: S.timer.total,
     timerRunning: !!S.timer.running,
     hasFinished: isDone,
-    notes: ''  // questionNotes son privadas — nunca se envían al público
+    notes: S.generalNotes || '',
+    generalNotes: S.generalNotes || ''
   };
 }
 

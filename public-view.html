@@ -119,13 +119,15 @@
     background: var(--deb-bg);
     color: var(--deb-ink);
     height: 100%;
+    min-height: 100%;
     display: none !important;
-    grid-template-rows: auto 1fr auto;
-    overflow: hidden;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow-y: auto;
     position: relative;
   }
   #frame-debates.active {
-    display: grid !important;
+    display: flex !important;
   }
 
   #frame-debates .topbar {
@@ -151,13 +153,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 0;
-    min-height: 85px;
+    padding: 14px 0;
+    min-height: 70px;
     flex-shrink: 0;
   }
   #pubQuestion {
     width: 100%;
-    padding: 0 40px;
+    padding: 0 32px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -166,8 +168,8 @@
   }
   .q-p1 {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(24px, 2.5vw, 34px);
-    line-height: 1.5;
+    font-size: clamp(20px, 2.3vw, 32px);
+    line-height: 1.4;
     color: var(--deb-ink);
     text-align: justify;
     text-justify: inter-word;
@@ -178,8 +180,8 @@
   }
   .q-p2 {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(18px, 1.8vw, 24px);
-    line-height: 1.5;
+    font-size: clamp(16px, 1.6vw, 22px);
+    line-height: 1.4;
     color: var(--deb-ink);
     text-align: justify;
     text-justify: inter-word;
@@ -201,21 +203,21 @@
   #frame-debates .main {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    padding: 16px 32px;
+    padding: 12px 28px;
     align-items: center;
     min-height: 0;
-    gap: 0;
-    flex: 1;
+    gap: 16px;
+    flex: 1 1 auto;
   }
   .name-card {
     background: var(--deb-surf);
     border-radius: 14px;
-    padding: 22px 24px;
+    padding: 16px 20px;
     box-shadow: 0 2px 12px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.06);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 140px;
+    gap: 6px;
+    min-height: 90px;
     justify-content: center;
     position: relative;
     overflow: hidden;
@@ -228,13 +230,13 @@
     letter-spacing: 3px;
     text-transform: uppercase;
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
   .nc-role.a { color: var(--deb-a); }
   .nc-role.b { color: var(--deb-b); }
   .nc-name {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(22px, 3.2vw, 44px);
+    font-size: clamp(20px, 2.8vw, 38px);
     line-height: 1.1;
     color: var(--deb-ink);
     transition: all .3s;
@@ -242,7 +244,7 @@
   .nc-name.empty {
     color: var(--deb-ink3);
     font-style: italic;
-    font-size: clamp(14px, 1.6vw, 20px);
+    font-size: clamp(14px, 1.5vw, 18px);
   }
   .nc-name.roulette {
     color: var(--deb-a);
@@ -253,8 +255,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 0 28px;
+    gap: 4px;
+    padding: 0 16px;
   }
   .timer-wrap {
     position: relative;
@@ -263,8 +265,8 @@
     justify-content: center;
   }
   #arcSvg {
-    width: 200px;
-    height: 200px;
+    width: clamp(130px, 16vw, 175px);
+    height: clamp(130px, 16vw, 175px);
   }
   #arcBg {
     fill: none;
@@ -283,8 +285,8 @@
   #pubTimer {
     position: absolute;
     font-family: 'DM Serif Display', serif;
-    font-size: 64px;
-    letter-spacing: -3px;
+    font-size: clamp(38px, 4.5vw, 54px);
+    letter-spacing: -2px;
     color: var(--deb-a);
     transition: color .4s, font-size .3s;
     line-height: 1;
@@ -302,8 +304,8 @@
     animation: alertPulse .42s ease-in-out infinite;
   }
   @keyframes alertPulse {
-    0%,100%{ font-size: 64px; text-shadow: none; }
-    50%{ font-size: 92px; text-shadow: 0 0 28px rgba(192,48,48,.8), 0 0 64px rgba(192,48,48,.4); }
+    0%,100%{ font-size: clamp(38px, 4.5vw, 54px); text-shadow: none; }
+    50%{ font-size: clamp(48px, 5.5vw, 68px); text-shadow: 0 0 28px rgba(192,48,48,.8), 0 0 64px rgba(192,48,48,.4); }
   }
   .vs {
     font-family: 'DM Mono', monospace;
@@ -316,21 +318,23 @@
   #frame-debates .bottom {
     background: var(--deb-surf2);
     border-top: 2px solid var(--deb-bord);
-    padding: 14px 0;
+    padding: 12px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 85px;
-    gap: 6px;
+    min-height: 65px;
+    gap: 4px;
     flex-shrink: 0;
+    width: 100%;
+    z-index: 10;
   }
   .b-row {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
-    padding: 0 40px;
+    padding: 0 32px;
   }
   .b-lbl {
     font-size: 11px;
@@ -340,13 +344,13 @@
     color: var(--deb-ink3);
     white-space: nowrap;
     flex-shrink: 0;
-    padding-top: 4px;
+    padding-top: 2px;
   }
   .b-text {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(18px, 2vw, 24px);
+    font-size: clamp(16px, 1.8vw, 22px);
     color: var(--deb-ink);
-    line-height: 1.5;
+    line-height: 1.4;
     white-space: pre-wrap;
     text-align: justify;
     text-justify: inter-word;
@@ -367,18 +371,18 @@
   #qNoteRow {
     display: none;
     border-top: 1px solid var(--deb-bord);
-    padding-top: 6px;
-    margin-top: 4px;
+    padding-top: 4px;
+    margin-top: 2px;
     width: 100%;
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
   #qNoteRow.show { display: block; }
   #pubQNote {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(18px, 2vw, 24px);
+    font-size: clamp(16px, 1.8vw, 22px);
     color: var(--deb-ink);
-    line-height: 1.5;
+    line-height: 1.4;
     white-space: pre-wrap;
     text-align: justify;
     text-justify: inter-word;
@@ -1333,8 +1337,9 @@ function apply(d){
   // 5. Notas Públicas
   var nEl = document.getElementById('pubNotes');
   if(nEl){
-    if(d.notes && d.notes.trim()){
-      nEl.textContent = d.notes;
+    var notesVal = (d.notes && d.notes.trim()) ? d.notes : (d.generalNotes && d.generalNotes.trim() ? d.generalNotes : '');
+    if(notesVal){
+      nEl.textContent = notesVal;
       nEl.classList.remove('dim');
     } else {
       nEl.textContent = '—';
@@ -1346,8 +1351,9 @@ function apply(d){
   var qnRow = document.getElementById('qNoteRow');
   var qnEl = document.getElementById('pubQNote');
   if(qnRow && qnEl){
-    if(d.activeQNote && d.showQNote){
-      qnEl.textContent = d.activeQNote;
+    var qnVal = (d.activeQNote && d.activeQNote.trim()) ? d.activeQNote : '';
+    if(qnVal && (d.showQNote || d.showQNote === undefined)){
+      qnEl.textContent = qnVal;
       qnRow.classList.add('show');
     } else {
       qnRow.classList.remove('show');
