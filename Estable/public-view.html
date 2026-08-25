@@ -1006,46 +1006,63 @@ function renderTimerUI(r, t, isRunning, isDone){
   }
 }
 
+var _pubTimerInterval = null;
+var _timerTargetEnd = null;
+var _lastDisplayedRemaining = null;
+var _currentTotal = 0;
+
 function syncPubTimer(r, t, isRunning, isDone, ts){
   _currentTotal = t;
-  
-  if(isRunning){
-    var targetRemaining = r;
-    if(ts && typeof ts === 'number'){
-      var elapsed = Math.floor((Date.now() - ts) / 1000);
-      if(elapsed > 0 && elapsed < 60){
-        targetRemaining = Math.max(0, r - elapsed);
-      }
-    }
-    
-    // Solo recalibrar si hay una desviación mayor a 1 segundo para evitar saltos o parpadeos
-    if(!_isTimerRunning || Math.abs(_currentRemaining - targetRemaining) > 1){
-      _currentRemaining = targetRemaining;
-    }
-    _isTimerRunning = true;
-    renderTimerUI(_currentRemaining, _currentTotal, true, false);
 
-    if(!_pubTimerInterval){
-      _pubTimerInterval = setInterval(function(){
-        if(_currentRemaining > 0){
-          _currentRemaining--;
-          renderTimerUI(_currentRemaining, _currentTotal, true, false);
-        } else {
-          clearInterval(_pubTimerInterval);
-          _pubTimerInterval = null;
-          _isTimerRunning = false;
-          renderTimerUI(0, _currentTotal, false, true);
-        }
-      }, 1000);
-    }
-  } else {
+  if(!isRunning){
     if(_pubTimerInterval){
       clearInterval(_pubTimerInterval);
       _pubTimerInterval = null;
     }
-    _isTimerRunning = false;
-    _currentRemaining = r;
+    _timerTargetEnd = null;
+    _lastDisplayedRemaining = null;
     renderTimerUI(r, t, false, isDone);
+    return;
+  }
+
+  // Timer está corriendo
+  var calculatedEnd = Date.now() + (r * 1000);
+  if(ts && typeof ts === 'number'){
+    var age = Date.now() - ts;
+    if(age > 0 && age < 60000){
+      calculatedEnd = ts + (r * 1000);
+    }
+  }
+
+  // Recalibrar solo si no había timer activo o si hay un desajuste real (> 1.5s, p.ej. pause/seek)
+  if(!_timerTargetEnd || Math.abs(_timerTargetEnd - calculatedEnd) > 1500){
+    _timerTargetEnd = calculatedEnd;
+  }
+
+  var updateTick = function(){
+    if(!_timerTargetEnd) return;
+    var now = Date.now();
+    var remMs = Math.max(0, _timerTargetEnd - now);
+    var remSec = Math.ceil(remMs / 1000);
+
+    if(remSec !== _lastDisplayedRemaining){
+      _lastDisplayedRemaining = remSec;
+      renderTimerUI(remSec, _currentTotal, true, remSec === 0);
+    }
+
+    if(remSec === 0){
+      if(_pubTimerInterval){
+        clearInterval(_pubTimerInterval);
+        _pubTimerInterval = null;
+      }
+      _timerTargetEnd = null;
+    }
+  };
+
+  updateTick();
+
+  if(!_pubTimerInterval){
+    _pubTimerInterval = setInterval(updateTick, 200);
   }
 }
 
