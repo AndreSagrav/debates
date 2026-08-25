@@ -127,6 +127,56 @@
   .pod-1 { height: 160px; background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; }
   .pod-2 { height: 120px; background: linear-gradient(135deg, #c0c0c0, #708090); color: #000; }
   .pod-3 { height: 90px; background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
+
+  /* RESPONSIVE DESIGN FOR MOBILE & TABLETS */
+  @media (max-width: 860px) {
+    body {
+      height: auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    header {
+      height: auto;
+      padding: 10px 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .h-title {
+      font-size: 16px;
+      width: 100%;
+      text-align: center;
+    }
+    .h-btns {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .container {
+      height: auto;
+      flex-direction: column;
+      overflow: visible;
+    }
+    .left-col {
+      padding: 14px;
+      border-right: none;
+      overflow: visible;
+    }
+    .right-col {
+      width: 100%;
+      padding: 14px;
+      border-left: none;
+      border-top: 1px solid var(--border);
+    }
+    .opts-builder {
+      grid-template-columns: 1fr;
+    }
+    .pin-code {
+      font-size: 40px;
+      letter-spacing: 4px;
+    }
+  }
 </style>
 </head>
 <div class="games-menu-overlay" id="gamesOverlay"></div>
