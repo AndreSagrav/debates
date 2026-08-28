@@ -600,6 +600,25 @@
     background: rgba(43, 90, 122, 0.12);
     border-color: rgba(43, 90, 122, 0.3);
   }
+  .cr-badge.q {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+  .center-roulette-card.is-question {
+    width: 680px;
+    max-width: 92%;
+  }
+  .center-roulette-card.is-question .cr-drum-wrapper {
+    height: auto;
+    min-height: 85px;
+    max-height: 140px;
+    padding: 6px 0;
+  }
+  .center-roulette-card.is-question .cr-name {
+    font-size: clamp(22px, 3.2vw, 32px);
+    line-height: 1.25;
+  }
   .cr-drum-wrapper {
     height: 75px;
     overflow: hidden;
@@ -644,6 +663,11 @@
   }
   .center-roulette-card.glide-right {
     transform: translateX(35%) scale(0.88);
+    opacity: 0;
+    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
+  }
+  .center-roulette-card.glide-up {
+    transform: translateY(-42%) scale(0.88);
     opacity: 0;
     transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
   }
@@ -1656,9 +1680,15 @@ function roulette(names, finalName, target){
   tick();
 }
 
-// Animación de Ruleta de Preguntas (Slot Machine con sonido y nitidez total)
+// Animación de Ruleta de Preguntas (Opción 1: Giro Central Espectacular con Aterrizaje hacia la Banda Superior)
 function qRoulette(questions, finalQ){
   qRouletteRunning = true;
+
+  var overlay = document.getElementById('centerRouletteOverlay');
+  var cardModal = document.getElementById('centerRouletteCard');
+  var crBadge = document.getElementById('crBadge');
+  var crName = document.getElementById('crName');
+
   var band = document.querySelector('#frame-debates .q-band');
   var el = document.getElementById('pubQuestion');
   if(!el){
@@ -1666,7 +1696,6 @@ function qRoulette(questions, finalQ){
     return;
   }
 
-  // Generamos un pool variado para que la ruleta siempre gire visualmente con variedad
   var dummyTeasers = [
     '¿Cuál es el argumento central de esta tesis?',
     '¿Qué evidencias científicas y datos respaldan la postura?',
@@ -1686,36 +1715,73 @@ function qRoulette(questions, finalQ){
   }
   if(finalQ && pool.indexOf(finalQ) === -1) pool.push(finalQ);
 
+  if(overlay && cardModal && crName){
+    cardModal.className = 'center-roulette-card is-question';
+    if(crBadge){
+      crBadge.textContent = '❓ Sorteando Pregunta del Debate';
+      crBadge.className = 'cr-badge q';
+    }
+    crName.className = 'cr-name';
+    crName.textContent = pool[0];
+    overlay.classList.add('show');
+  }
+
   if(band) band.classList.add('spinning-band');
   el.style.opacity = '1';
 
-  var step = 0, maxSteps = 28, baseDelay = 32;
+  var step = 0, maxSteps = 24, baseDelay = 35;
   function tick(){
-    el.classList.remove('q-slot-spin', 'q-slot-land');
-    void el.offsetWidth;
-    el.classList.add('q-slot-spin');
     var sample = pool[Math.floor(Math.random() * pool.length)];
-    var preview = typeof sample === 'string' ? sample.split('\n')[0].substring(0, 85) : String(sample);
-    el.innerHTML = '<p class="q-p1" style="opacity:1 !important; color:#18181b !important; font-weight:600;">' + preview + (preview.length >= 85 ? '…' : '') + '</p>';
-    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 10);
+    var preview = typeof sample === 'string' ? sample.split('\n')[0].substring(0, 95) : String(sample);
+
+    if(crName){
+      crName.classList.remove('spin');
+      void crName.offsetWidth;
+      crName.classList.add('spin');
+      crName.textContent = preview + (preview.length >= 95 ? '…' : '');
+    }
+
+    el.innerHTML = '<p class="q-p1" style="opacity:1 !important; color:#18181b !important; font-weight:600;">' + preview + (preview.length >= 95 ? '…' : '') + '</p>';
+
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 12);
     step++;
+
     if(step < maxSteps){
-      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 540);
+      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 500);
     } else {
-      if(band) band.classList.remove('spinning-band');
-      el.classList.remove('q-slot-spin');
-      void el.offsetWidth;
-      el.classList.add('q-slot-land');
-      renderQuestion(finalQ);
-      el.style.opacity = '1';
-      pQ = finalQ;
+      // 1. Pregunta fijada en el centro con brillo triunfal
+      var finalPreview = typeof finalQ === 'string' ? finalQ.split('\n')[0].substring(0, 110) : String(finalQ);
+      if(crName){
+        crName.classList.remove('spin');
+        void crName.offsetWidth;
+        crName.classList.add('winner');
+        crName.textContent = finalPreview;
+      }
       if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteLand();
+
+      // 2. Pausa de 600ms, luego vuelo hacia arriba a la banda de preguntas
       setTimeout(function(){
-        el.classList.remove('q-slot-land');
-        qRouletteRunning = false;
-      }, 500);
+        if(cardModal){
+          cardModal.classList.add('glide-up');
+        }
+        if(band) band.classList.remove('spinning-band');
+        el.classList.remove('q-slot-spin');
+        void el.offsetWidth;
+        el.classList.add('q-slot-land');
+        renderQuestion(finalQ);
+        el.style.opacity = '1';
+        pQ = finalQ;
+
+        setTimeout(function(){
+          if(overlay) overlay.classList.remove('show');
+          if(cardModal) cardModal.className = 'center-roulette-card';
+          el.classList.remove('q-slot-land');
+          qRouletteRunning = false;
+        }, 420);
+      }, 600);
     }
   }
+
   tick();
 }
 
