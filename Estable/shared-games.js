@@ -65,133 +65,223 @@ var GameEngine = (function(){
      SOUND ENGINE — Web Audio API (zero dependencies)
      ══════════════════════════════════════════════════ */
 
+  var _savedMute = false;
+  try { _savedMute = localStorage.getItem('debate_sfx_muted') === 'true'; } catch(e){}
+  _muted = _savedMute;
+
   function _ctx(){
     if(!_audioCtx){
       _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if(_audioCtx.state === 'suspended'){
+      _audioCtx.resume();
+    }
     return _audioCtx;
   }
 
-  function isMuted(){ return _muted; }
-  function toggleMute(){ _muted = !_muted; return _muted; }
-  function setMuted(v){ _muted = !!v; }
+  // Global user-gesture auto-unlock for modern browser policies
+  function _unlockAudio(){
+    try {
+      var ctx = _ctx();
+      if(ctx && ctx.state === 'suspended') ctx.resume();
+    } catch(e){}
+  }
+  if(typeof window !== 'undefined'){
+    window.addEventListener('click', _unlockAudio, {passive: true});
+    window.addEventListener('touchstart', _unlockAudio, {passive: true});
+    window.addEventListener('keydown', _unlockAudio, {passive: true});
+  }
 
-  /* Play a tone with given frequency, duration, and type */
+  function isMuted(){ return _muted; }
+  function toggleMute(){
+    _muted = !_muted;
+    try { localStorage.setItem('debate_sfx_muted', _muted ? 'true' : 'false'); } catch(e){}
+    return _muted;
+  }
+  function setMuted(v){
+    _muted = !!v;
+    try { localStorage.setItem('debate_sfx_muted', _muted ? 'true' : 'false'); } catch(e){}
+  }
+
+  /* Play a synthesized tone with precise envelope */
   function _tone(freq, duration, type, volume, delay){
     if(_muted) return;
-    var ctx = _ctx();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = type || 'sine';
-    osc.frequency.value = freq;
-    gain.gain.value = volume || 0.15;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    var t = ctx.currentTime + (delay || 0);
-    osc.start(t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
-    osc.stop(t + duration);
+    try {
+      var ctx = _ctx();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = volume != null ? volume : 0.3;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      var t = ctx.currentTime + (delay || 0);
+      osc.start(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+      osc.stop(t + duration);
+    } catch(e){}
   }
 
-  /* ── Named Sound Effects ── */
+  /* ── Efectos Sonoros Fuertes y Realistas ── */
 
-  function sfxCorrect(){
-    // Ascending two-note chime
-    _tone(523, 0.12, 'sine', 0.18, 0);      // C5
-    _tone(659, 0.12, 'sine', 0.18, 0.08);   // E5
-    _tone(784, 0.25, 'sine', 0.22, 0.16);   // G5
-  }
-
-  function sfxWrong(){
-    // Descending buzz
-    _tone(300, 0.15, 'sawtooth', 0.1, 0);
-    _tone(200, 0.3, 'sawtooth', 0.12, 0.1);
-  }
-
-  function sfxTick(){
-    _tone(880, 0.04, 'sine', 0.08);
+  // Tic-Tac Fuerte del Temporizador (Tictac mecánico de reloj de madera / alarma urgente)
+  var _tickAlt = false;
+  function sfxTick(urgent){
+    if(_muted) return;
+    try {
+      var ctx = _ctx();
+      if(urgent){
+        // Alarma urgente de tensión (últimos 10 segundos): Doble pulso agudo
+        _tone(1150, 0.06, 'square', 0.35, 0);
+        _tone(1500, 0.05, 'sine', 0.3, 0.07);
+      } else {
+        // Tictac mecánico de reloj: golpe acústico con caída resonante
+        _tickAlt = !_tickAlt;
+        var startFreq = _tickAlt ? 900 : 720;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.048);
+        gain.gain.setValueAtTime(0.42, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.048);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.048);
+      }
+    } catch(e){}
   }
 
   function sfxTickUrgent(){
-    _tone(1200, 0.06, 'square', 0.1);
+    sfxTick(true);
+  }
+
+  // Ruleta Fuerte: Click mecánico de rueda para cada salto
+  function sfxRouletteStep(pitchMod){
+    if(_muted) return;
+    try {
+      var ctx = _ctx();
+      var f = 520 + (pitchMod || (Math.random() * 80 - 40));
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.38, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.04);
+    } catch(e){}
+  }
+
+  // Ruleta: Aterrizaje y Selección Ganadora (Acorde triunfal armónico brillante)
+  function sfxRouletteLand(){
+    if(_muted) return;
+    _tone(523.25, 0.22, 'sine', 0.35, 0);       // C5
+    _tone(659.25, 0.25, 'sine', 0.35, 0.08);    // E5
+    _tone(783.99, 0.3,  'sine', 0.4,  0.16);    // G5
+    _tone(1046.5, 0.55, 'sine', 0.45, 0.24);    // C6
+    _tone(1318.5, 0.55, 'triangle', 0.28, 0.32);// E6
+  }
+
+  // Fin del Tiempo / Buzzer de concurso (Alarma potente)
+  function sfxTimeUp(){
+    if(_muted) return;
+    _tone(160, 0.7, 'sawtooth', 0.45, 0);
+    _tone(145, 0.7, 'sawtooth', 0.4, 0.12);
+    _tone(120, 0.9, 'sawtooth', 0.45, 0.24);
+    _tone(880, 0.2, 'square', 0.3, 0);
+    _tone(440, 0.45, 'sine', 0.35, 0.28);
+  }
+
+  function sfxCorrect(){
+    // Chime brillante y alegre de acierto
+    _tone(523, 0.14, 'sine', 0.35, 0);
+    _tone(659, 0.14, 'sine', 0.35, 0.09);
+    _tone(784, 0.18, 'sine', 0.4, 0.18);
+    _tone(1047, 0.45, 'sine', 0.45, 0.28);
+  }
+
+  function sfxWrong(){
+    // Buzz grave de error
+    _tone(280, 0.2, 'sawtooth', 0.35, 0);
+    _tone(180, 0.45, 'sawtooth', 0.4, 0.15);
   }
 
   function sfxReveal(){
-    // Swoosh up
+    // Swoosh ascendente
     if(_muted) return;
-    var ctx = _ctx();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(200, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.25);
-    gain.gain.value = 0.12;
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
+    try {
+      var ctx = _ctx();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(950, ctx.currentTime + 0.26);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch(e){}
   }
 
   function sfxFanfare(){
-    // Victory fanfare: C-E-G-C ascending
-    _tone(523, 0.15, 'sine', 0.15, 0);
-    _tone(659, 0.15, 'sine', 0.15, 0.12);
-    _tone(784, 0.15, 'sine', 0.18, 0.24);
-    _tone(1047, 0.4, 'sine', 0.22, 0.36);
-    // Harmony layer
-    _tone(392, 0.15, 'triangle', 0.08, 0);
-    _tone(494, 0.15, 'triangle', 0.08, 0.12);
-    _tone(587, 0.15, 'triangle', 0.1, 0.24);
-    _tone(784, 0.4, 'triangle', 0.12, 0.36);
+    // Fanfarria de victoria
+    _tone(523, 0.18, 'sine', 0.35, 0);
+    _tone(659, 0.18, 'sine', 0.35, 0.14);
+    _tone(784, 0.18, 'sine', 0.4, 0.28);
+    _tone(1047, 0.5, 'sine', 0.45, 0.42);
+    _tone(392, 0.18, 'triangle', 0.2, 0);
+    _tone(494, 0.18, 'triangle', 0.2, 0.14);
+    _tone(587, 0.18, 'triangle', 0.22, 0.28);
+    _tone(784, 0.5, 'triangle', 0.25, 0.42);
   }
 
   function sfxSuspense(){
-    // Low pulsing drone
-    _tone(110, 0.5, 'sine', 0.06, 0);
-    _tone(110, 0.5, 'sine', 0.08, 0.6);
-    _tone(117, 0.5, 'sine', 0.06, 1.2);
-    _tone(104, 0.5, 'sine', 0.08, 1.8);
+    _tone(110, 0.55, 'sine', 0.2, 0);
+    _tone(110, 0.55, 'sine', 0.22, 0.6);
+    _tone(117, 0.55, 'sine', 0.2, 1.2);
+    _tone(104, 0.65, 'sine', 0.25, 1.8);
   }
 
   function sfxClick(){
-    _tone(600, 0.04, 'sine', 0.1);
+    _tone(650, 0.04, 'sine', 0.25);
   }
 
   function sfxJoin(){
-    // Player joined notification
-    _tone(440, 0.08, 'sine', 0.1, 0);
-    _tone(660, 0.12, 'sine', 0.12, 0.06);
+    _tone(440, 0.09, 'sine', 0.28, 0);
+    _tone(660, 0.14, 'sine', 0.32, 0.07);
   }
 
   function sfxCountdown(){
-    // 3-2-1 beeps
-    _tone(600, 0.1, 'square', 0.08, 0);
-    _tone(600, 0.1, 'square', 0.08, 1);
-    _tone(600, 0.1, 'square', 0.08, 2);
-    _tone(900, 0.3, 'square', 0.12, 3); // GO!
+    _tone(600, 0.12, 'square', 0.25, 0);
+    _tone(600, 0.12, 'square', 0.25, 1);
+    _tone(600, 0.12, 'square', 0.25, 2);
+    _tone(950, 0.35, 'square', 0.35, 3); // ¡GO!
   }
 
   function sfxRoulette(){
-    // Rapid clicking like a spinning wheel
-    for(var i = 0; i < 20; i++){
-      var delay = i * 0.05 + (i * i * 0.003);
-      _tone(400 + Math.random() * 200, 0.03, 'sine', 0.06, delay);
+    for(var i = 0; i < 22; i++){
+      var delay = i * 0.045 + (i * i * 0.0035);
+      _tone(420 + Math.random() * 240, 0.035, 'sine', 0.28, delay);
     }
   }
 
   function sfxLevelUp(){
-    // Ascending arpeggio
-    _tone(440, 0.1, 'sine', 0.12, 0);
-    _tone(554, 0.1, 'sine', 0.12, 0.08);
-    _tone(659, 0.1, 'sine', 0.14, 0.16);
-    _tone(880, 0.3, 'sine', 0.18, 0.24);
+    _tone(440, 0.12, 'sine', 0.3, 0);
+    _tone(554, 0.12, 'sine', 0.32, 0.09);
+    _tone(659, 0.15, 'sine', 0.35, 0.18);
+    _tone(880, 0.35, 'sine', 0.4, 0.27);
   }
 
   function sfxBuzzer(){
-    // Game show buzzer
-    _tone(150, 0.6, 'sawtooth', 0.12, 0);
-    _tone(140, 0.4, 'sawtooth', 0.08, 0.2);
+    sfxTimeUp();
   }
 
   /* ── Anti-Cheat Helpers ── */
@@ -308,19 +398,22 @@ var GameEngine = (function(){
     toggleMute: toggleMute,
     setMuted: setMuted,
     sfx: {
-      correct:   sfxCorrect,
-      wrong:     sfxWrong,
-      tick:      sfxTick,
-      tickUrgent: sfxTickUrgent,
-      reveal:    sfxReveal,
-      fanfare:   sfxFanfare,
-      suspense:  sfxSuspense,
-      click:     sfxClick,
-      join:      sfxJoin,
-      countdown: sfxCountdown,
-      roulette:  sfxRoulette,
-      levelUp:   sfxLevelUp,
-      buzzer:    sfxBuzzer
+      correct:      sfxCorrect,
+      wrong:        sfxWrong,
+      tick:         sfxTick,
+      tickUrgent:   sfxTickUrgent,
+      timeUp:       sfxTimeUp,
+      rouletteStep: sfxRouletteStep,
+      rouletteLand: sfxRouletteLand,
+      reveal:       sfxReveal,
+      fanfare:      sfxFanfare,
+      suspense:     sfxSuspense,
+      click:        sfxClick,
+      join:         sfxJoin,
+      countdown:    sfxCountdown,
+      roulette:     sfxRoulette,
+      levelUp:      sfxLevelUp,
+      buzzer:       sfxBuzzer
     }
   };
 })();

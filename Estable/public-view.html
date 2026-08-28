@@ -78,6 +78,22 @@
     justify-content: flex-end;
     align-items: center;
   }
+  .sound-toggle-btn {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.25);
+    color: rgba(255,255,255,.85);
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-right: 8px;
+  }
+  .sound-toggle-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
   .fullscreen-btn {
     background: rgba(255,255,255,.1);
     border: 1px solid rgba(255,255,255,.25);
@@ -940,6 +956,7 @@
   <div class="pub-header-left"></div>
   <div class="pub-title">Actividad de Repaso</div>
   <div class="pub-header-right">
+    <button class="sound-toggle-btn" id="pubSoundBtn" title="Sonido activado (Clic para silenciar)">🔊</button>
     <button class="fullscreen-btn" id="fullBtn">⤢ Pantalla Completa</button>
   </div>
 </header>
@@ -1251,6 +1268,13 @@ function syncPubTimer(r, t, isRunning, isDone, ts){
     if(remSec !== _lastDisplayedRemaining){
       _lastDisplayedRemaining = remSec;
       renderTimerUI(remSec, _currentTotal, true, remSec === 0);
+      if(window.GameEngine && GameEngine.sfx){
+        if(remSec > 0 && isRunning){
+          GameEngine.sfx.tick(remSec <= 10);
+        } else if(remSec === 0){
+          GameEngine.sfx.timeUp();
+        }
+      }
     }
 
     if(remSec === 0){
@@ -1397,7 +1421,7 @@ function apply(d){
   }
 }
 
-// Animación de Ruleta de Nombres (Slot Machine con desaceleración y solidez total)
+// Animación de Ruleta de Nombres (Slot Machine con sonido y desaceleración)
 function roulette(names, finalName, target){
   var isA = target === 'A';
   if(isA) rouletteRunningA = true; else rouletteRunningB = true;
@@ -1426,6 +1450,7 @@ function roulette(names, finalName, target){
     void el.offsetWidth;
     el.classList.add('slot-spin');
     el.textContent = pool[Math.floor(Math.random() * pool.length)];
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 10);
     step++;
     if(step < maxSteps){
       setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 520);
@@ -1440,6 +1465,7 @@ function roulette(names, finalName, target){
       el.textContent = finalName || '—';
       el.classList.remove('empty', 'roulette');
       if(isA) pA = finalName; else pB = finalName;
+      if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteLand();
       setTimeout(function(){
         el.classList.remove('slot-land');
         if(isA) rouletteRunningA = false; else rouletteRunningB = false;
@@ -1449,7 +1475,7 @@ function roulette(names, finalName, target){
   tick();
 }
 
-// Animación de Ruleta de Preguntas (Slot Machine con desaceleración y nitidez total)
+// Animación de Ruleta de Preguntas (Slot Machine con sonido y nitidez total)
 function qRoulette(questions, finalQ){
   qRouletteRunning = true;
   var band = document.querySelector('#frame-debates .q-band');
@@ -1459,7 +1485,7 @@ function qRoulette(questions, finalQ){
     return;
   }
 
-  // Generamos un pool variado para que la ruleta siempre gire visualmente con variedad, incluso si solo hay 1 pregunta de refuerzo
+  // Generamos un pool variado para que la ruleta siempre gire visualmente con variedad
   var dummyTeasers = [
     '¿Cuál es el argumento central de esta tesis?',
     '¿Qué evidencias científicas y datos respaldan la postura?',
@@ -1490,6 +1516,7 @@ function qRoulette(questions, finalQ){
     var sample = pool[Math.floor(Math.random() * pool.length)];
     var preview = typeof sample === 'string' ? sample.split('\n')[0].substring(0, 85) : String(sample);
     el.innerHTML = '<p class="q-p1" style="opacity:1 !important; color:#18181b !important; font-weight:600;">' + preview + (preview.length >= 85 ? '…' : '') + '</p>';
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 10);
     step++;
     if(step < maxSteps){
       setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 540);
@@ -1501,6 +1528,7 @@ function qRoulette(questions, finalQ){
       renderQuestion(finalQ);
       el.style.opacity = '1';
       pQ = finalQ;
+      if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteLand();
       setTimeout(function(){
         el.classList.remove('q-slot-land');
         qRouletteRunning = false;
@@ -1713,6 +1741,27 @@ if(window.supabase){
     cell.className = 'jeopardy-cell';
     cell.textContent = '$' + val;
     grid.appendChild(cell);
+  }
+})();
+</script>
+<script src="shared-games.js"></script>
+<script>
+(function initPublicSoundControl(){
+  var sndBtn = document.getElementById('pubSoundBtn');
+  if(sndBtn && window.GameEngine){
+    var updateBtnUI = function(){
+      var muted = GameEngine.isMuted();
+      sndBtn.textContent = muted ? '🔇' : '🔊';
+      sndBtn.title = muted ? 'Sonido desactivado (Clic para activar)' : 'Sonido activado (Clic para silenciar)';
+      sndBtn.style.opacity = muted ? '0.6' : '1';
+    };
+    updateBtnUI();
+    sndBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      GameEngine.toggleMute();
+      updateBtnUI();
+      if(!GameEngine.isMuted() && GameEngine.sfx) GameEngine.sfx.click();
+    });
   }
 })();
 </script>
