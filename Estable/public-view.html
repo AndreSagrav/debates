@@ -546,6 +546,108 @@
   @keyframes nameProgressMove { 0%{ transform: translateX(-100%); } 100%{ transform: translateX(100%); } }
   .name-progress.animating { animation: nameProgressMove 2s linear infinite; }
 
+  /* ── Ruleta Central Escénica (Opción 1) ── */
+  .center-roulette-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 240, 232, 0.82);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease-out;
+  }
+  .center-roulette-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .center-roulette-card {
+    background: #ffffff;
+    border: 2px solid var(--deb-orange);
+    border-radius: 24px;
+    padding: 26px 40px;
+    box-shadow: 0 20px 50px rgba(160, 112, 64, 0.22), 0 0 0 1px rgba(160, 112, 64, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 90%;
+    width: 520px;
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s;
+  }
+  .center-roulette-overlay.show .center-roulette-card {
+    transform: scale(1);
+  }
+  .cr-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--deb-orange);
+    background: rgba(160, 112, 64, 0.12);
+    padding: 5px 16px;
+    border-radius: 99px;
+    border: 1px solid rgba(160, 112, 64, 0.3);
+  }
+  .cr-badge.b {
+    color: var(--deb-b);
+    background: rgba(43, 90, 122, 0.12);
+    border-color: rgba(43, 90, 122, 0.3);
+  }
+  .cr-drum-wrapper {
+    height: 75px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+  }
+  .cr-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(30px, 4.5vw, 46px);
+    line-height: 1.1;
+    color: var(--deb-ink);
+    letter-spacing: -0.5px;
+    transition: all .15s ease;
+  }
+  .cr-name.spin {
+    animation: slotUp .08s ease both;
+  }
+  .cr-name.winner {
+    animation: winPulse .5s cubic-bezier(.34, 1.56, .64, 1) both;
+    color: var(--deb-orange);
+    text-shadow: 0 0 24px rgba(160, 112, 64, 0.45);
+  }
+  .cr-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--deb-ink3);
+  }
+  @keyframes winPulse {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .center-roulette-card.glide-left {
+    transform: translateX(-35%) scale(0.88);
+    opacity: 0;
+    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
+  }
+  .center-roulette-card.glide-right {
+    transform: translateX(35%) scale(0.88);
+    opacity: 0;
+    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
+  }
+
   /* ═══════════════════════════════════════════════════════════
      OTHER MINI-GAMES FRAMES
      ═══════════════════════════════════════════════════════════ */
@@ -1030,6 +1132,16 @@
       <div id="finText">¡FINALIZADO!</div>
       <div id="finSub">Tiempo agotado</div>
     </div>
+    <!-- 🎲 Ruleta Central Escénica (Opción 1) -->
+    <div class="center-roulette-overlay" id="centerRouletteOverlay">
+      <div class="center-roulette-card" id="centerRouletteCard">
+        <div class="cr-badge" id="crBadge">🎲 Sorteando Participante A</div>
+        <div class="cr-drum-wrapper">
+          <div class="cr-name" id="crName">Sorteando…</div>
+        </div>
+        <div class="cr-sub">Sorteo en vivo</div>
+      </div>
+    </div>
   </div>
 
   <!-- 2. QUIZ KAHOOT FRAME -->
@@ -1452,57 +1564,95 @@ function apply(d){
   }
 }
 
-// Animación de Ruleta de Nombres (Slot Machine con sonido y desaceleración)
+// Animación de Ruleta de Nombres (Opción 1: Giro Central Espectacular con Aterrizaje)
 function roulette(names, finalName, target){
   var isA = target === 'A';
   if(isA) rouletteRunningA = true; else rouletteRunningB = true;
 
-  var elId = isA ? 'nameA' : 'nameB';
-  var el = document.getElementById(elId);
-  var card = el ? el.closest('.name-card') : null;
-  if(!el){
-    if(isA) rouletteRunningA = false; else rouletteRunningB = false;
-    return;
-  }
+  var overlay = document.getElementById('centerRouletteOverlay');
+  var cardModal = document.getElementById('centerRouletteCard');
+  var crBadge = document.getElementById('crBadge');
+  var crName = document.getElementById('crName');
+
+  var targetElId = isA ? 'nameA' : 'nameB';
+  var targetEl = document.getElementById(targetElId);
+  var targetCard = targetEl ? targetEl.closest('.name-card') : null;
 
   var pool = (names && names.length > 0) ? names.slice() : ['Participante 1', 'Participante 2', 'Participante 3', 'Participante 4'];
   if(finalName && pool.indexOf(finalName) === -1) pool.push(finalName);
   while(pool.length < 4) pool = pool.concat(pool);
 
-  el.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin', 'name-pop');
-  if(card){
-    card.classList.add('spinning');
-    if(!isA) card.classList.add('b');
+  if(overlay && cardModal && crName){
+    cardModal.className = 'center-roulette-card';
+    if(crBadge){
+      crBadge.textContent = isA ? '🎲 Sorteando: Participante A (Pregunta)' : '🎲 Sorteando: Participante B (Responde)';
+      crBadge.className = isA ? 'cr-badge' : 'cr-badge b';
+    }
+    crName.className = 'cr-name';
+    crName.textContent = pool[0];
+    overlay.classList.add('show');
   }
 
-  var step = 0, maxSteps = 28, baseDelay = 32;
+  if(targetCard){
+    targetCard.classList.add('spinning');
+    if(!isA) targetCard.classList.add('b');
+  }
+
+  var step = 0, maxSteps = 24, baseDelay = 35;
   function tick(){
-    el.classList.remove('slot-spin', 'slot-land');
-    void el.offsetWidth;
-    el.classList.add('slot-spin');
-    el.textContent = pool[Math.floor(Math.random() * pool.length)];
-    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 10);
+    var randName = pool[Math.floor(Math.random() * pool.length)];
+    if(crName){
+      crName.classList.remove('spin');
+      void crName.offsetWidth;
+      crName.classList.add('spin');
+      crName.textContent = randName;
+    }
+    if(targetEl){
+      targetEl.textContent = randName;
+      targetEl.classList.remove('empty');
+    }
+
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 12);
     step++;
+
     if(step < maxSteps){
-      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 520);
+      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 500);
     } else {
-      el.classList.remove('slot-spin');
-      if(card){
-        card.classList.remove('spinning');
-        if(!isA) card.classList.remove('b');
+      // 1. Ganador fijado en el centro con brillo triunfal
+      if(crName){
+        crName.classList.remove('spin');
+        void crName.offsetWidth;
+        crName.classList.add('winner');
+        crName.textContent = finalName || '—';
       }
-      void el.offsetWidth;
-      el.classList.add('slot-land');
-      el.textContent = finalName || '—';
-      el.classList.remove('empty', 'roulette');
-      if(isA) pA = finalName; else pB = finalName;
       if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteLand();
+
+      // 2. Pausa triunfal de 550ms, luego vuelo a la tarjeta correspondiente
       setTimeout(function(){
-        el.classList.remove('slot-land');
-        if(isA) rouletteRunningA = false; else rouletteRunningB = false;
-      }, 480);
+        if(cardModal){
+          cardModal.classList.add(isA ? 'glide-left' : 'glide-right');
+        }
+        if(targetEl){
+          targetEl.textContent = finalName || '—';
+          targetEl.classList.remove('empty', 'roulette');
+          targetEl.classList.add('name-pop');
+        }
+        if(targetCard){
+          targetCard.classList.remove('spinning');
+          if(!isA) targetCard.classList.remove('b');
+        }
+        if(isA) pA = finalName; else pB = finalName;
+
+        setTimeout(function(){
+          if(overlay) overlay.classList.remove('show');
+          if(cardModal) cardModal.className = 'center-roulette-card';
+          if(targetEl) targetEl.classList.remove('name-pop');
+          if(isA) rouletteRunningA = false; else rouletteRunningB = false;
+        }, 400);
+      }, 550);
     }
   }
+
   tick();
 }
 
