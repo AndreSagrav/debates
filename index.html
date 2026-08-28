@@ -143,7 +143,7 @@
   .timer-block{padding:14px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
   .block-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
   .hotkey-hint{font-size:8.5px;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:0;font-weight:400;text-transform:none;}
-  #timerDisplay{font-family:'DM Mono','Space Mono',monospace;font-variant-numeric:tabular-nums;font-feature-settings:'tnum';font-weight:800;font-size:54px;letter-spacing:-1px;line-height:1;color:var(--a);text-align:center;display:block;transition:color .4s;cursor:default;}
+  #timerDisplay{font-family:'DM Serif Display',serif;font-size:58px;letter-spacing:-2px;line-height:1;color:var(--a);text-align:center;display:block;transition:color .4s;cursor:default;}
   #timerDisplay.mid{color:var(--orange);}
   #timerDisplay.low{color:var(--red);animation:timerTick .5s infinite;}
   @keyframes timerTick{0%,100%{opacity:1}50%{opacity:.5}}
@@ -557,7 +557,7 @@ function buildPublicHTML(){
     "#arcSvg{width:100%;height:100%;overflow:visible;}",
     "#arcBg{fill:none;stroke:var(--bord);stroke-width:8;}",
     "#arcProg{fill:none;stroke:var(--a);stroke-width:8;stroke-linecap:round;transform-origin:120px 120px;transform:rotate(-90deg);transition:stroke-dashoffset .9s linear,stroke .4s;}",
-    "#pubTimer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'DM Mono','Space Mono',monospace;font-variant-numeric:tabular-nums;font-feature-settings:'tnum';font-weight:800;font-size:46px;letter-spacing:-0.5px;color:var(--a);transition:color .4s,transform .2s;line-height:1;text-align:center;white-space:nowrap;}",
+    "#pubTimer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'DM Serif Display',serif;font-size:52px;letter-spacing:-2px;color:var(--a);transition:color .4s,transform .2s;line-height:1;text-align:center;white-space:nowrap;}",
     "#pubTimer.glow{color:var(--orange);animation:glowPulse 1.2s ease-in-out infinite;}",
     "@keyframes glowPulse{0%,100%{text-shadow:0 0 6px rgba(160,112,64,.3),0 0 18px rgba(160,112,64,.15)}50%{text-shadow:0 0 14px rgba(160,112,64,.8),0 0 36px rgba(160,112,64,.4)}}",
     "#pubTimer.low{color:var(--red);animation:alertPulse .5s ease-in-out infinite;}",
