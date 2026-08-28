@@ -271,57 +271,72 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 0 16px;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
   }
   .timer-wrap {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: clamp(150px, 18vw, 195px);
+    height: clamp(150px, 18vw, 195px);
   }
   #arcSvg {
-    width: clamp(130px, 16vw, 175px);
-    height: clamp(130px, 16vw, 175px);
+    width: 100%;
+    height: 100%;
+    overflow: visible;
   }
   #arcBg {
     fill: none;
     stroke: var(--deb-bord);
-    stroke-width: 10;
+    stroke-width: 8;
   }
   #arcProg {
     fill: none;
     stroke: var(--deb-a);
-    stroke-width: 10;
+    stroke-width: 8;
     stroke-linecap: round;
-    transform-origin: center;
+    transform-origin: 120px 120px;
     transform: rotate(-90deg);
     transition: stroke-dashoffset .9s linear, stroke .4s;
   }
   #pubTimer {
     position: absolute;
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(38px, 4.5vw, 54px);
-    letter-spacing: -2px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'DM Mono', 'Space Mono', 'DM Sans', monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    font-weight: 800;
+    font-size: clamp(36px, 4.2vw, 48px);
+    letter-spacing: -0.5px;
     color: var(--deb-a);
-    transition: color .4s, font-size .3s;
+    transition: color .4s, transform .2s;
     line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    user-select: none;
+    margin: 0;
+    padding: 0;
   }
   #pubTimer.glow {
     color: var(--deb-orange);
     animation: glowPulse 1.2s ease-in-out infinite;
   }
   @keyframes glowPulse {
-    0%,100%{ text-shadow: 0 0 8px rgba(160,112,64,.4), 0 0 24px rgba(160,112,64,.18); }
-    50%{ text-shadow: 0 0 18px rgba(160,112,64,.85), 0 0 52px rgba(160,112,64,.45); }
+    0%,100%{ text-shadow: 0 0 6px rgba(160,112,64,.3), 0 0 18px rgba(160,112,64,.15); }
+    50%{ text-shadow: 0 0 14px rgba(160,112,64,.8), 0 0 36px rgba(160,112,64,.4); }
   }
   #pubTimer.low {
     color: var(--deb-red);
-    animation: alertPulse .42s ease-in-out infinite;
+    animation: alertPulse .5s ease-in-out infinite;
   }
   @keyframes alertPulse {
-    0%,100%{ font-size: clamp(38px, 4.5vw, 54px); text-shadow: none; }
-    50%{ font-size: clamp(48px, 5.5vw, 68px); text-shadow: 0 0 28px rgba(192,48,48,.8), 0 0 64px rgba(192,48,48,.4); }
+    0%,100%{ transform: translate(-50%, -50%) scale(1); text-shadow: none; }
+    50%{ transform: translate(-50%, -50%) scale(1.08); text-shadow: 0 0 16px rgba(192,48,48,.7), 0 0 32px rgba(192,48,48,.35); }
   }
   .vs {
     font-family: 'DM Mono', monospace;
@@ -831,23 +846,19 @@
       padding: 2px 8px;
       gap: 2px;
     }
-    #arcSvg {
-      width: clamp(100px, 16vh, 150px);
-      height: clamp(100px, 16vh, 150px);
+    .timer-wrap {
+      width: clamp(130px, 18vh, 165px);
+      height: clamp(130px, 18vh, 165px);
     }
     #arcBg, #arcProg {
-      stroke-width: 12;
+      stroke-width: 8;
     }
     #pubTimer {
-      font-size: clamp(32px, 4.5vw, 46px);
-      letter-spacing: -1px;
+      font-size: clamp(30px, 4.2vh, 38px);
+      letter-spacing: -0.5px;
     }
     #pubTimer.low {
-      font-size: clamp(36px, 5vw, 50px);
-    }
-    @keyframes alertPulse {
-      0%,100%{ font-size: clamp(32px, 4.5vw, 46px); text-shadow: none; }
-      50%{ font-size: clamp(38px, 5.2vw, 54px); text-shadow: 0 0 20px rgba(192,48,48,.8); }
+      font-size: clamp(30px, 4.2vh, 38px);
     }
     .vs {
       font-size: 8.5px;
@@ -974,9 +985,9 @@
       </div>
       <div class="center-col">
         <div class="timer-wrap">
-          <svg id="arcSvg" viewBox="0 0 200 200">
-            <circle id="arcBg" cx="100" cy="100" r="85"/>
-            <circle id="arcProg" cx="100" cy="100" r="85"/>
+          <svg id="arcSvg" viewBox="0 0 240 240">
+            <circle id="arcBg" cx="120" cy="120" r="106"/>
+            <circle id="arcProg" cx="120" cy="120" r="106"/>
           </svg>
           <span id="pubTimer">00:00</span>
         </div>
@@ -1097,7 +1108,7 @@
 /* ═══════════════════════════════════════════════════════════
    DEBATES LOGIC & SYNCHRONIZATION ENGINE
    ═══════════════════════════════════════════════════════════ */
-var CIRC = 2 * Math.PI * 85;
+var CIRC = 2 * Math.PI * 106;
 var arc = document.getElementById('arcProg');
 if(arc){
   arc.style.strokeDasharray = CIRC;
