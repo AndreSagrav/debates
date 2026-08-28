@@ -785,8 +785,13 @@ function getMsg(){
     activeQ: q?q.text:null,
     activeQNote: q?q.note:null,
     showQNote: S.showQNote,
-    timerR: S.timer.remaining, timerT: S.timer.total,
+    timerR: S.timer.remaining, 
+    timerT: S.timer.total,
     timerRunning: !!S.timer.running,
+    timerTargetEnd: S.timer.running ? _timerTargetEndTime : null,
+    timerTs: Date.now(),
+    senderTs: Date.now(),
+    clientId: _myClientId,
     hasFinished: isDone,
     notes: S.generalNotes || '',
     generalNotes: S.generalNotes || ''
@@ -1003,7 +1008,9 @@ function saveToSupabase(immediate){
         timerR: S.timer.remaining,
         timerT: S.timer.total,
         timerRunning: !!S.timer.running,
+        timerTargetEnd: S.timer.running ? _timerTargetEndTime : null,
         timerTs: Date.now(),
+        senderTs: Date.now(),
         hasFinished: isDone,
         activeMode: 'debates'
       },
@@ -1205,7 +1212,7 @@ function checkReinforcementUnlock(){
   if(usedMain >= MAIN_Q_LIMIT) S.reinfUnlocked = true;
 }
 
-/* Temporizador */
+/* Temporizador de Alta Precisión Basado en Timestamps Reales */
 var timerEl  = document.getElementById('timerDisplay');
 var barFill  = document.getElementById('timerBarFill');
 var startBtn = document.getElementById('startBtn');
@@ -1213,76 +1220,162 @@ var pauseBtn = document.getElementById('pauseBtn');
 var resetBtn = document.getElementById('resetBtn');
 var inMin    = document.getElementById('inputMin');
 var inSec    = document.getElementById('inputSec');
+var _timerTargetEndTime = null;
+var _lastTimerSec = null;
 var _timerJustFinished = false;
 
 function renderTimer(){
-  var r=S.timer.remaining, t=S.timer.total;
+  var r = S.timer.remaining, t = S.timer.total;
   timerEl.textContent = pad(Math.floor(r/60))+':'+pad(r%60);
   timerEl.classList.remove('mid','low'); barFill.style.background='var(--a)';
-  if(r<=10&&r>0){timerEl.classList.add('low');barFill.style.background='var(--red)';}
-  else if(t>0&&r/t<=0.4){timerEl.classList.add('mid');barFill.style.background='var(--orange)';}
-  barFill.style.width=(t>0?(r/t)*100:100)+'%';
+  if(r<=10 && r>0){ timerEl.classList.add('low'); barFill.style.background='var(--red)'; }
+  else if(t>0 && r/t<=0.4){ timerEl.classList.add('mid'); barFill.style.background='var(--orange)'; }
+  barFill.style.width = (t>0 ? (r/t)*100 : 100) + '%';
   writeStateBus();
-  if(publicWin&&!publicWin.closed){ publicWin.postMessage(getMsg(),'*'); }
+  if(publicWin && !publicWin.closed){ 
+    try { publicWin.postMessage(getMsg(),'*'); }catch(e){}
+  }
 }
+
 function startTimer(){
   if(timerId) return;
-  var t=(parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-  if(!t) return;
+  
+  var inputTotal = (parseInt(inMin.value)||0)*60 + (parseInt(inSec.value)||0);
+  // Si no tenemos tiempo restante o ya terminó, inicializar desde los inputs
+  if(S.timer.remaining <= 0 || !S.timer.remaining || S.timer.remaining > inputTotal){
+    S.timer.remaining = inputTotal;
+    S.timer.total = inputTotal;
+  }
+  if(S.timer.remaining <= 0) return;
+
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.click();
   _timerJustFinished = false;
-  S.timer.total=t; S.timer.remaining=t; S.timer.running=true; 
+  S.timer.running = true;
+  _timerTargetEndTime = Date.now() + (S.timer.remaining * 1000);
+  _lastTimerSec = S.timer.remaining;
+
   renderTimer();
   saveToSupabase(true);
-  timerId=setInterval(function(){
-    if(S.timer.remaining>0){
-      S.timer.remaining--;
-      if(S.timer.remaining===0) _timerJustFinished = true;
+
+  timerId = setInterval(function(){
+    if(!_timerTargetEndTime) return;
+    var now = Date.now();
+    var remMs = Math.max(0, _timerTargetEndTime - now);
+    var remSec = Math.ceil(remMs / 1000);
+
+    if(remSec !== _lastTimerSec){
+      _lastTimerSec = remSec;
+      S.timer.remaining = remSec;
+      
+      if(remSec === 0) _timerJustFinished = true;
       renderTimer();
+
       if(window.GameEngine && GameEngine.sfx){
-        if(S.timer.remaining > 0){
-          GameEngine.sfx.tick(S.timer.remaining <= 10);
+        if(remSec > 0){
+          GameEngine.sfx.tick(remSec <= 10);
         } else {
           GameEngine.sfx.timeUp();
         }
       }
-      // Guardar en Supabase cada 3 segundos durante la marcha para mantener calibración
-      if(S.timer.remaining % 3 === 0){
+
+      // Sincronizar a Supabase periódicamente durante la marcha
+      if(remSec % 3 === 0 && remSec > 0){
         saveToSupabase(false);
       }
-    } else {
-      clearInterval(timerId);timerId=null;S.timer.running=false;
+    }
+
+    if(remSec <= 0){
+      clearInterval(timerId);
+      timerId = null;
+      _timerTargetEndTime = null;
+      S.timer.running = false;
+      S.timer.remaining = 0;
       _timerJustFinished = true;
-      timerEl.classList.remove('mid','low');setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
-      var f=0,fi=setInterval(function(){timerEl.style.opacity=timerEl.style.opacity==='0'?'1':'0';if(++f>8){clearInterval(fi);timerEl.style.opacity='1';}},250);
+      timerEl.classList.remove('mid','low');
+      setDis(false);
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+
+      var f=0, fi=setInterval(function(){
+        timerEl.style.opacity = timerEl.style.opacity==='0'?'1':'0';
+        if(++f>8){ clearInterval(fi); timerEl.style.opacity='1'; }
+      }, 250);
+
       renderTimer();
       saveToSupabase(true);
     }
-  },1000);
-  setDis(true);startBtn.disabled=true;pauseBtn.disabled=false;
+  }, 200);
+
+  setDis(true);
+  startBtn.disabled = true;
+  pauseBtn.disabled = false;
 }
+
 function pauseTimer(){
-  if(!timerId) return;
+  if(!timerId && !S.timer.running) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.click();
-  clearInterval(timerId);timerId=null;S.timer.running=false;
+  
+  if(_timerTargetEndTime){
+    var remMs = Math.max(0, _timerTargetEndTime - Date.now());
+    S.timer.remaining = Math.ceil(remMs / 1000);
+  }
+  if(timerId){ clearInterval(timerId); timerId = null; }
+  _timerTargetEndTime = null;
+  _lastTimerSec = null;
+  S.timer.running = false;
   _timerJustFinished = false;
-  setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
+
+  setDis(false);
+  startBtn.disabled = false;
+  pauseBtn.disabled = true;
   renderTimer();
   saveToSupabase(true);
 }
-function toggleTimer(){ if(timerId) pauseTimer(); else startTimer(); }
+
+function toggleTimer(){ 
+  if(timerId || S.timer.running) pauseTimer(); 
+  else startTimer(); 
+}
+
 function resetTimer(){
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.click();
-  if(timerId){clearInterval(timerId);timerId=null;}
+  if(timerId){ clearInterval(timerId); timerId = null; }
+  _timerTargetEndTime = null;
+  _lastTimerSec = null;
   _timerJustFinished = false;
-  S.timer.running=false;
-  S.timer.remaining=(parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-  S.timer.total=S.timer.remaining;
-  timerEl.style.opacity='1';timerEl.classList.remove('mid','low');
-  setDis(false);startBtn.disabled=false;pauseBtn.disabled=true;
+  S.timer.running = false;
+  var inputTotal = (parseInt(inMin.value)||0)*60 + (parseInt(inSec.value)||0);
+  S.timer.remaining = inputTotal;
+  S.timer.total = inputTotal;
+  timerEl.style.opacity = '1';
+  timerEl.classList.remove('mid','low');
+  setDis(false);
+  startBtn.disabled = false;
+  pauseBtn.disabled = true;
   renderTimer();
   saveToSupabase(true);
 }
+
+function handleVisibilitySync(){
+  if(S.timer.running && _timerTargetEndTime){
+    var now = Date.now();
+    var remMs = Math.max(0, _timerTargetEndTime - now);
+    S.timer.remaining = Math.ceil(remMs / 1000);
+    if(S.timer.remaining <= 0){
+      S.timer.remaining = 0;
+      S.timer.running = false;
+      if(timerId){ clearInterval(timerId); timerId = null; }
+      _timerTargetEndTime = null;
+      _timerJustFinished = true;
+    }
+    renderTimer();
+    saveToSupabase(true);
+  }
+}
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) handleVisibilitySync(); });
+window.addEventListener('focus', handleVisibilitySync);
+window.addEventListener('pageshow', handleVisibilitySync);
+
 function setDis(v){inMin.disabled=v;inSec.disabled=v;}
 
 startBtn.addEventListener('click',startTimer);

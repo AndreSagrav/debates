@@ -1262,7 +1262,7 @@ var _timerTargetEnd = null;
 var _lastDisplayedRemaining = null;
 var _currentTotal = 0;
 
-function syncPubTimer(r, t, isRunning, isDone, ts){
+function syncPubTimer(r, t, isRunning, isDone, ts, targetEnd){
   _currentTotal = t;
 
   if(!isRunning){
@@ -1271,22 +1271,22 @@ function syncPubTimer(r, t, isRunning, isDone, ts){
       _pubTimerInterval = null;
     }
     _timerTargetEnd = null;
-    _lastDisplayedRemaining = null;
+    _lastDisplayedRemaining = r;
     renderTimerUI(r, t, false, isDone);
     return;
   }
 
   // Timer está corriendo
-  var calculatedEnd = Date.now() + (r * 1000);
-  if(ts && typeof ts === 'number'){
+  var calculatedEnd = (typeof targetEnd === 'number' && targetEnd > 0) ? targetEnd : (Date.now() + (r * 1000));
+  if(!targetEnd && ts && typeof ts === 'number'){
     var age = Date.now() - ts;
     if(age > 0 && age < 60000){
       calculatedEnd = ts + (r * 1000);
     }
   }
 
-  // Recalibrar solo si no había timer activo o si hay un desajuste real (> 1.5s, p.ej. pause/seek)
-  if(!_timerTargetEnd || Math.abs(_timerTargetEnd - calculatedEnd) > 1500){
+  // Recalibrar si no había timer activo o si hay un desajuste real (> 1000ms)
+  if(!_timerTargetEnd || Math.abs(_timerTargetEnd - calculatedEnd) > 1000){
     _timerTargetEnd = calculatedEnd;
   }
 
@@ -1300,7 +1300,7 @@ function syncPubTimer(r, t, isRunning, isDone, ts){
       _lastDisplayedRemaining = remSec;
       renderTimerUI(remSec, _currentTotal, true, remSec === 0);
       if(window.GameEngine && GameEngine.sfx){
-        if(remSec > 0 && isRunning){
+        if(remSec > 0){
           GameEngine.sfx.tick(remSec <= 10);
         } else if(remSec === 0){
           GameEngine.sfx.timeUp();
@@ -1423,7 +1423,7 @@ function apply(d){
   var isRunning = !!d.timerRunning;
   var isDone = !!d.hasFinished;
 
-  syncPubTimer(r, t, isRunning, isDone, d.timerTs);
+  syncPubTimer(r, t, isRunning, isDone, d.timerTs, d.timerTargetEnd);
 
   // 5. Notas Públicas
   var nEl = document.getElementById('pubNotes');
