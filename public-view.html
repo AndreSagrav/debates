@@ -1532,6 +1532,16 @@ var modeTitles = {
   batalla: '⚔️ Batalla de Equipos'
 };
 
+// Leer inmediatamente el parámetro ?mode= al inicio del script
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var forceMode = params.get('mode');
+  if(forceMode && modeTitles[forceMode]){
+    _lockedMode = forceMode;
+    currentMode = forceMode;
+  }
+})();
+
 function switchWidgetMode(mode){
   if(!mode || !modeTitles[mode]) return;
   if(_lockedMode && mode !== _lockedMode) return; // Bloquear cambios si modo está forzado por URL
@@ -1784,8 +1794,11 @@ function clearPublicViewForNewRound(){
 function apply(d){
   if(!d) return;
 
+  // Si hay un modo forzado por URL (ej. mode=quiz), NUNCA aplicar datos de debates
+  if(_lockedMode && _lockedMode !== 'debates') return;
+
   // Auto-switch mode si viene especificado
-  if(d.activeMode){
+  if(d.activeMode && !_lockedMode){
     if(d.activeMode !== currentMode) switchWidgetMode(d.activeMode);
   }
 
@@ -2361,10 +2374,31 @@ function pullFromOpener(){
 }
 
 function pullFromStorage(){
+  if(_lockedMode === 'quiz' || currentMode === 'quiz'){
+    try{
+      var qRaw = localStorage.getItem('trivia_express_active_session');
+      if(!qRaw){
+        var lp = localStorage.getItem('quiz_latest_pin');
+        if(lp) qRaw = localStorage.getItem('quiz_game_' + lp);
+      }
+      if(qRaw){
+        var qSess = JSON.parse(qRaw);
+        if(qSess) renderPublicTriviaQuiz(qSess);
+      } else {
+        var lp2 = localStorage.getItem('quiz_latest_pin');
+        var pinEl = document.getElementById('quizPubPin');
+        if(lp2 && pinEl && (pinEl.textContent === '----' || !pinEl.textContent)){
+          pinEl.textContent = lp2;
+        }
+      }
+    }catch(e){}
+    return true;
+  }
+
   pullRouletteFromStorage();
   try{
     var m = localStorage.getItem('active_game_mode');
-    if(m && m !== currentMode){
+    if(m && m !== currentMode && !_lockedMode){
       switchWidgetMode(m);
     }
   }catch(e){}
@@ -2373,23 +2407,6 @@ function pullFromStorage(){
     if(raw){
       var p = JSON.parse(raw);
       if(p && p.d){ apply(p.d); return true; }
-    }
-  }catch(e){}
-  try{
-    var qRaw = localStorage.getItem('trivia_express_active_session');
-    if(!qRaw){
-      var lp = localStorage.getItem('quiz_latest_pin');
-      if(lp) qRaw = localStorage.getItem('quiz_game_' + lp);
-    }
-    if(qRaw){
-      var qSess = JSON.parse(qRaw);
-      if(qSess) renderPublicTriviaQuiz(qSess);
-    } else {
-      var lp2 = localStorage.getItem('quiz_latest_pin');
-      var pinEl = document.getElementById('quizPubPin');
-      if(lp2 && pinEl && (pinEl.textContent === '----' || !pinEl.textContent)){
-        pinEl.textContent = lp2;
-      }
     }
   }catch(e){}
   return false;
