@@ -418,6 +418,37 @@ var GameEngine = (function(){
     }
   }
 
+  /* ── Música de Espera / Lobby de Trivia Express ── */
+  var _lobbyMusicTimer = null;
+  var _lobbyStep = 0;
+  var _lobbyNotes = [
+    523.25, 659.25, 783.99, 1046.50, // C - E - G - C
+    587.33, 698.46, 880.00, 1174.66, // D - F - A - D
+    659.25, 783.99, 987.77, 1318.51, // E - G - B - E
+    523.25, 783.99, 1046.50, 1567.98 // C - G - C - G
+  ];
+
+  function playTriviaLobbyMusic(){
+    if(_lobbyMusicTimer || _muted) return;
+    _lobbyStep = 0;
+    _lobbyMusicTimer = setInterval(function(){
+      if(_muted){ stopTriviaLobbyMusic(); return; }
+      var note = _lobbyNotes[_lobbyStep % _lobbyNotes.length];
+      _tone(note, 0.12, 'sine', 0.12, 0);
+      if(_lobbyStep % 4 === 0){
+        _tone(note / 2, 0.20, 'triangle', 0.16, 0);
+      }
+      _lobbyStep++;
+    }, 240);
+  }
+
+  function stopTriviaLobbyMusic(){
+    if(_lobbyMusicTimer){
+      clearInterval(_lobbyMusicTimer);
+      _lobbyMusicTimer = null;
+    }
+  }
+
   /* ── Public API ── */
   return {
     getClient: getClient,
@@ -457,7 +488,9 @@ var GameEngine = (function(){
       triviaCount:    sfxTriviaCount,
       triviaCorrect:  sfxTriviaCorrect,
       triviaWrong:    sfxTriviaWrong,
-      triviaPodium:   sfxTriviaPodium
+      triviaPodium:   sfxTriviaPodium,
+      playTriviaLobbyMusic: playTriviaLobbyMusic,
+      stopTriviaLobbyMusic: stopTriviaLobbyMusic
     }
   };
 })();

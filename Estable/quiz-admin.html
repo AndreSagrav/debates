@@ -228,7 +228,7 @@
         <button class="btn-sm" id="copyPinLinkBtn" style="background:#1e293b;border:1px solid #10b981;color:#34d399;">🔗 Copiar Enlace Directo</button>
         <a href="play.html" target="_blank" class="btn-sm" style="background:#1e293b;border:1px solid #d97706;color:#fbbf24;text-decoration:none;">📱 Abrir play.html</a>
       </div>
-      <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;">Los alumnos deben entrar a <strong>play.html</strong> con el PIN o usar el enlace directo</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;">Los alumnos deben entrar a: <strong id="adminPlayFullUrl" style="color:#60a5fa;word-break:break-all;">debates-pi.vercel.app/play.html</strong></div>
     </div>
 
     <!-- 2. EDITOR DE PREGUNTAS CON NOTAS PÚBLICAS Y PRIVADAS -->
@@ -859,6 +859,12 @@ if(window.BroadcastChannel){
     }
   };
 }
+var adminUrlEl = document.getElementById('adminPlayFullUrl');
+if(adminUrlEl){
+  var fullUrl = window.location.origin.replace(/^https?:\/\//, '') + window.location.pathname.replace('quiz-admin.html', 'play.html');
+  adminUrlEl.textContent = fullUrl;
+}
+
 setInterval(saveSessionState, 1500);
 </script>
 <script src="shared-games.js"></script>

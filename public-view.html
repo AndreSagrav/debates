@@ -1373,10 +1373,12 @@
     <div class="quiz-stage-full" id="quizStageFull">
       <!-- LOBBY VIEW -->
       <div class="trivia-lobby-box" id="quizPubLobby">
-        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#93c5fd;">🎯 TRIVIA EXPRESS • UNIRSE</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#93c5fd;">🎯 TRIVIA EXPRESS • SALA DE ESPERA</div>
         <div class="trivia-pin-huge" id="quizPubPin">----</div>
-        <div style="font-size:16px;color:#cbd5e1;">Ingresa a <strong>play.html</strong> con tu celular para unirte</div>
-        <div style="margin-top:6px;font-size:14px;color:#60a5fa;" id="quizPubPlayersCount">0 Jugadores conectados</div>
+        <div style="font-size:16px;color:#cbd5e1;">Ingresa desde tu celular a: <strong id="pubLobbyFullUrl" style="color:#60a5fa;word-break:break-all;">debates-pi.vercel.app/play.html</strong></div>
+        <div style="margin-top:6px;font-size:15px;font-weight:700;color:#34d399;" id="quizPubPlayersCount">0 Jugadores conectados</div>
+        <!-- LISTA EN VIVO DE ESTUDIANTES UNIDOS AL LOBBY -->
+        <div id="pubLobbyPlayersGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px;max-height:160px;overflow-y:auto;width:100%;"></div>
       </div>
 
       <!-- QUESTION & RESULTS VIEW -->
@@ -2146,7 +2148,33 @@ function renderPublicTriviaQuiz(s){
     if(qBox) qBox.style.display = 'none';
     if(podBox) podBox.style.display = 'none';
     if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
+
+    var fullUrlEl = document.getElementById('pubLobbyFullUrl');
+    if(fullUrlEl){
+      var hostUrl = window.location.origin.replace(/^https?:\/\//, '') + window.location.pathname.replace('public-view.html', 'play.html');
+      fullUrlEl.textContent = hostUrl;
+    }
+
+    var lobbyGrid = document.getElementById('pubLobbyPlayersGrid');
+    if(lobbyGrid){
+      lobbyGrid.innerHTML = '';
+      if(s.players && s.players.length > 0){
+        s.players.forEach(function(pl){
+          var chip = document.createElement('div');
+          chip.style.cssText = 'background:#1e293b;border:1px solid #3b82f6;color:#ffffff;border-radius:20px;padding:6px 14px;font-size:14px;font-weight:700;';
+          chip.textContent = '👤 ' + pl.name;
+          lobbyGrid.appendChild(chip);
+        });
+      }
+    }
+
+    if(window.GameEngine && GameEngine.sfx && GameEngine.sfx.playTriviaLobbyMusic){
+      GameEngine.sfx.playTriviaLobbyMusic();
+    }
   } else if(s.status === 'question' || s.status === 'results'){
+    if(window.GameEngine && GameEngine.sfx && GameEngine.sfx.stopTriviaLobbyMusic){
+      GameEngine.sfx.stopTriviaLobbyMusic();
+    }
     if(lobby) lobby.style.display = 'none';
     if(qBox) qBox.style.display = 'flex';
     if(podBox) podBox.style.display = 'none';
