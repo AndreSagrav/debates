@@ -561,7 +561,13 @@ function saveSessionState(){
     localStorage.setItem('quiz_latest_pin', activeSession.pin);
   } catch(e){}
   if(localChannel){
-    localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession });
+    try { localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession }); } catch(e){}
+  }
+  if(window.BroadcastChannel){
+    try {
+      var uChan = new BroadcastChannel('universal_public_channel');
+      uChan.postMessage({ type: 'SESSION_UPDATE', session: activeSession, mode: 'quiz', activeMode: 'quiz' });
+    } catch(e){}
   }
   if(supabaseClient && activeSession.pin){
     supabaseClient.from('debate_state').upsert([

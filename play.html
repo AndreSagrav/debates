@@ -341,15 +341,33 @@ document.getElementById('joinBtn').addEventListener('click', function(){
 
     document.getElementById('lobbyPlayerName').textContent = name;
     showScreen('lobbyScreen');
+    
+    if(localChannel){
+      try { localChannel.postMessage({ type: 'PLAYER_JOIN', player: { name: name } }); } catch(e){}
+    }
     subscribeToSession();
   }
 
   function saveSessionState(){
     if(!activeSession) return;
-    try { localStorage.setItem('quiz_game_' + pin, JSON.stringify(activeSession)); } catch(e){}
-    if(localChannel) localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession });
+    try {
+      localStorage.setItem('quiz_game_' + pin, JSON.stringify(activeSession));
+      localStorage.setItem('trivia_express_active_session', JSON.stringify(activeSession));
+    } catch(e){}
+    if(localChannel){
+      try { localChannel.postMessage({ type: 'SESSION_UPDATE', session: activeSession }); } catch(e){}
+    }
+    if(window.BroadcastChannel){
+      try {
+        var uChan = new BroadcastChannel('universal_public_channel');
+        uChan.postMessage({ type: 'SESSION_UPDATE', session: activeSession });
+      } catch(e){}
+    }
     if(supabaseClient && pin){
-      supabaseClient.from('debate_state').upsert({ id: 'quiz_' + pin, state: activeSession }).then(function(){});
+      supabaseClient.from('debate_state').upsert([
+        { id: 'quiz_' + pin, state: activeSession },
+        { id: 'quiz_active', state: activeSession }
+      ]).then(function(){});
     }
   }
 
