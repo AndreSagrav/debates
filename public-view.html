@@ -673,6 +673,123 @@
   }
 
   /* ═══════════════════════════════════════════════════════════
+     TRIVIA EXPRESS LIVE STAGE
+     ═══════════════════════════════════════════════════════════ */
+  .quiz-stage-full {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .trivia-lobby-box {
+    background: linear-gradient(135deg, rgba(30,58,138,0.4), rgba(15,23,42,0.8));
+    border: 2px solid #3b82f6;
+    border-radius: 24px;
+    padding: 36px 48px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 650px;
+    width: 90%;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .trivia-pin-huge {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(54px, 10vw, 76px);
+    font-weight: 700;
+    letter-spacing: 8px;
+    color: #60a5fa;
+    text-shadow: 0 0 30px rgba(96,165,250,0.5);
+  }
+  .trivia-q-box {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .trivia-q-header {
+    background: linear-gradient(135deg, #1e1b4b, #0f172a);
+    border: 2px solid #6366f1;
+    border-radius: 20px;
+    padding: 24px 32px;
+    text-align: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 3.5vw, 34px);
+    color: #fff;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .trivia-opts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+  .trivia-opt-card {
+    border-radius: 16px;
+    padding: 18px 24px;
+    font-size: clamp(15px, 2.2vw, 20px);
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    transition: transform .3s ease, border-color .3s;
+  }
+  .trivia-opt-card.opt-a { background: linear-gradient(135deg, #dc2626, #b91c1c); border: 2px solid #ef4444; }
+  .trivia-opt-card.opt-b { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 2px solid #3b82f6; }
+  .trivia-opt-card.opt-c { background: linear-gradient(135deg, #d97706, #b45309); border: 2px solid #f59e0b; }
+  .trivia-opt-card.opt-d { background: linear-gradient(135deg, #059669, #047857); border: 2px solid #10b981; }
+  .trivia-opt-card.correct-highlight {
+    animation: correctPulse 1s infinite alternate;
+    box-shadow: 0 0 35px #10b981;
+    border-color: #34d399 !important;
+  }
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.03); }
+  }
+
+  /* PUBLIC EXPLANATION / NOTA PÚBLICA CARD */
+  .pub-quiz-exp-card {
+    background: linear-gradient(135deg, rgba(30,58,138,0.7), rgba(15,23,42,0.9));
+    border: 2px solid #60a5fa;
+    border-radius: 18px;
+    padding: 18px 26px;
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeIn .4s ease;
+    box-shadow: 0 10px 30px rgba(96,165,250,0.25);
+  }
+  .pq-exp-header {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #93c5fd;
+    text-transform: uppercase;
+  }
+  .pq-exp-body {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(16px, 2vw, 22px);
+    color: #ffffff;
+    line-height: 1.4;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
      OTHER MINI-GAMES FRAMES
      ═══════════════════════════════════════════════════════════ */
   .dark-stage {
@@ -1168,14 +1285,41 @@
     </div>
   </div>
 
-  <!-- 2. QUIZ KAHOOT FRAME -->
+  <!-- 2. TRIVIA EXPRESS FRAME -->
   <div class="widget-frame dark-stage" id="frame-quiz">
-    <div class="quiz-stage">
-      <div class="mill-question" id="quizQText">Esperando inicio del Quiz…</div>
-      <div class="quiz-podium-view" id="quizPodiumView">
-        <div class="podium-step podium-2"><span style="font-size:32px;">🥈</span><span id="qPod2">-</span></div>
-        <div class="podium-step podium-1"><span style="font-size:40px;">🥇</span><span id="qPod1">-</span></div>
-        <div class="podium-step podium-3"><span style="font-size:28px;">🥉</span><span id="qPod3">-</span></div>
+    <div class="quiz-stage-full" id="quizStageFull">
+      <!-- LOBBY VIEW -->
+      <div class="trivia-lobby-box" id="quizPubLobby">
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#93c5fd;">🎯 TRIVIA EXPRESS • UNIRSE</div>
+        <div class="trivia-pin-huge" id="quizPubPin">----</div>
+        <div style="font-size:16px;color:#cbd5e1;">Ingresa a <strong>play.html</strong> con tu celular para unirte</div>
+        <div style="margin-top:6px;font-size:14px;color:#60a5fa;" id="quizPubPlayersCount">0 Jugadores conectados</div>
+      </div>
+
+      <!-- QUESTION & RESULTS VIEW -->
+      <div class="trivia-q-box" id="quizPubQuestionBox" style="display:none;">
+        <div class="trivia-q-header" id="quizPubQText">Pregunta</div>
+        <div class="trivia-opts-grid" id="quizPubOptsGrid">
+          <div class="trivia-opt-card opt-a" id="pubOpt0"><span>▲ A:</span><span class="opt-label" id="pubOpt0Txt">Opción A</span></div>
+          <div class="trivia-opt-card opt-b" id="pubOpt1"><span>◆ B:</span><span class="opt-label" id="pubOpt1Txt">Opción B</span></div>
+          <div class="trivia-opt-card opt-c" id="pubOpt2"><span>● C:</span><span class="opt-label" id="pubOpt2Txt">Opción C</span></div>
+          <div class="trivia-opt-card opt-d" id="pubOpt3"><span>■ D:</span><span class="opt-label" id="pubOpt3Txt">Opción D</span></div>
+        </div>
+        <!-- NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA -->
+        <div class="pub-quiz-exp-card" id="pubQuizExpCard" style="display:none;">
+          <div class="pq-exp-header">💡 NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA</div>
+          <div class="pq-exp-body" id="pubQuizExpText">—</div>
+        </div>
+      </div>
+
+      <!-- PODIUM VIEW -->
+      <div class="card" id="quizPubPodiumBox" style="display:none;background:transparent;border:none;align-items:center;">
+        <div style="font-family:'DM Serif Display',serif;font-size:36px;color:#fbbf24;margin-bottom:12px;">🏆 ¡GANADORES DE TRIVIA EXPRESS!</div>
+        <div class="podium" style="width:360px;">
+          <div class="pod-step pod-2"><span style="font-size:32px;">🥈</span><span id="pubPod2Name">-</span></div>
+          <div class="pod-step pod-1"><span style="font-size:44px;">🥇</span><span id="pubPod1Name">-</span></div>
+          <div class="pod-step pod-3"><span style="font-size:28px;">🥉</span><span id="pubPod3Name">-</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1861,6 +2005,68 @@ function qRoulette(questions, finalQ){
    EVENT LISTENERS & MULTI-CHANNEL RECEIVERS
    ═══════════════════════════════════════════════════════════ */
 
+function renderPublicTriviaQuiz(s){
+  if(!s) return;
+  var lobby = document.getElementById('quizPubLobby');
+  var qBox = document.getElementById('quizPubQuestionBox');
+  var podBox = document.getElementById('quizPubPodiumBox');
+  var pinEl = document.getElementById('quizPubPin');
+  var plCount = document.getElementById('quizPubPlayersCount');
+  var qText = document.getElementById('quizPubQText');
+  var expCard = document.getElementById('pubQuizExpCard');
+  var expText = document.getElementById('pubQuizExpText');
+
+  if(pinEl && s.pin) pinEl.textContent = s.pin;
+  if(plCount && s.players) plCount.textContent = s.players.length + ' Jugadores conectados';
+
+  if(s.status === 'lobby'){
+    if(lobby) lobby.style.display = 'flex';
+    if(qBox) qBox.style.display = 'none';
+    if(podBox) podBox.style.display = 'none';
+  } else if(s.status === 'question' || s.status === 'results'){
+    if(lobby) lobby.style.display = 'none';
+    if(qBox) qBox.style.display = 'flex';
+    if(podBox) podBox.style.display = 'none';
+
+    var curQ = (s.questions && s.questions[s.current_question]) ? s.questions[s.current_question] : null;
+    if(curQ){
+      if(qText) qText.textContent = (s.current_question + 1) + '. ' + curQ.question;
+      for(var i = 0; i < 4; i++){
+        var optTxtEl = document.getElementById('pubOpt' + i + 'Txt');
+        var optCardEl = document.getElementById('pubOpt' + i);
+        if(optTxtEl && curQ.options) optTxtEl.textContent = curQ.options[i] || '—';
+        if(optCardEl){
+          optCardEl.classList.remove('correct-highlight');
+          if(s.status === 'results' && curQ.correct_index === i){
+            optCardEl.classList.add('correct-highlight');
+          }
+        }
+      }
+
+      // Mostrar Nota Pública / Explicación Pedagógica
+      if(s.status === 'results' && s.show_explanation && curQ.explanation){
+        if(expText) expText.textContent = curQ.explanation;
+        if(expCard) expCard.style.display = 'flex';
+      } else {
+        if(expCard) expCard.style.display = 'none';
+      }
+    }
+  } else if(s.status === 'finished'){
+    if(lobby) lobby.style.display = 'none';
+    if(qBox) qBox.style.display = 'none';
+    if(podBox) podBox.style.display = 'flex';
+
+    var players = (s.players || []).slice();
+    players.sort(function(a,b){ return (b.score||0) - (a.score||0); });
+    var p1 = document.getElementById('pubPod1Name');
+    var p2 = document.getElementById('pubPod2Name');
+    var p3 = document.getElementById('pubPod3Name');
+    if(p1) p1.textContent = players[0] ? players[0].name : '-';
+    if(p2) p2.textContent = players[1] ? players[1].name : '-';
+    if(p3) p3.textContent = players[2] ? players[2].name : '-';
+  }
+}
+
 // 1. PostMessage desde la ventana principal
 window.addEventListener('message', function(e){
   if(!e.data) return;
@@ -1868,6 +2074,7 @@ window.addEventListener('message', function(e){
   if(e.data.type === 'ROULETTE') roulette(e.data.names, e.data.finalName, e.data.target);
   if(e.data.type === 'ROULETTE_Q') qRoulette(e.data.questions, e.data.finalQ);
   if(e.data.type === 'CHANGE_GAME') switchWidgetMode(e.data.mode);
+  if(e.data.type === 'SESSION_UPDATE') renderPublicTriviaQuiz(e.data.session);
 });
 
 // 2. BroadcastChannel para sincronización entre pestañas independientes
@@ -1879,6 +2086,7 @@ if(window.BroadcastChannel){
     if(e.data.type === 'ROULETTE') roulette(e.data.names, e.data.finalName, e.data.target);
     if(e.data.type === 'ROULETTE_Q') qRoulette(e.data.questions, e.data.finalQ);
     if(e.data.type === 'CHANGE_GAME') switchWidgetMode(e.data.mode);
+    if(e.data.type === 'SESSION_UPDATE') renderPublicTriviaQuiz(e.data.session);
   };
 
   var dChan = new BroadcastChannel('debate_channel');
@@ -1896,6 +2104,12 @@ window.addEventListener('storage', function(e){
     try {
       var p = JSON.parse(e.newValue);
       if(p && p.d) apply(p.d);
+    } catch(_){}
+  }
+  if(e.key === 'trivia_express_active_session' && e.newValue){
+    try {
+      var sess = JSON.parse(e.newValue);
+      if(sess) renderPublicTriviaQuiz(sess);
     } catch(_){}
   }
   if(e.key === 'debate_roulette_event' && e.newValue){
@@ -1943,6 +2157,13 @@ function pullFromStorage(){
     if(raw){
       var p = JSON.parse(raw);
       if(p && p.d){ apply(p.d); return true; }
+    }
+  }catch(e){}
+  try{
+    var qRaw = localStorage.getItem('trivia_express_active_session');
+    if(qRaw){
+      var qSess = JSON.parse(qRaw);
+      if(qSess) renderPublicTriviaQuiz(qSess);
     }
   }catch(e){}
   return false;
@@ -2012,6 +2233,12 @@ if(window.supabase){
             if(st.activeMode) switchWidgetMode(st.activeMode);
             apply(st);
           }
+        } else if(payload.new.id === 'quiz_active'){
+          var qSt = payload.new.data || payload.new.state;
+          if(qSt){
+            switchWidgetMode('quiz');
+            renderPublicTriviaQuiz(qSt);
+          }
         } else if(payload.new.id === 'debate_roulette'){
           if(payload.new.data && payload.new.data.payload && payload.new.data.ts && Date.now() - payload.new.data.ts < 3500){
             _lastRouletteTs = payload.new.data.ts;
@@ -2025,12 +2252,17 @@ if(window.supabase){
 
     function pullFromSupabaseCloud(){
       if(!supabaseClient) return;
-      supabaseClient.from('debate_state').select('*').in('id', ['default', 'debate_roulette']).then(function(res){
+      supabaseClient.from('debate_state').select('*').in('id', ['default', 'quiz_active', 'debate_roulette']).then(function(res){
         if(res.data && res.data.length > 0){
           res.data.forEach(function(row){
             if(row.id === 'default'){
               var st = row.data || row.state;
               if(st) apply(st);
+            } else if(row.id === 'quiz_active'){
+              var qSt = row.data || row.state;
+              if(qSt && currentMode === 'quiz'){
+                renderPublicTriviaQuiz(qSt);
+              }
             } else if(row.id === 'debate_roulette'){
               if(row.data && row.data.payload && row.data.ts && row.data.ts > _lastRouletteTs && Date.now() - row.data.ts < 3500){
                 _lastRouletteTs = row.data.ts;
@@ -2043,6 +2275,11 @@ if(window.supabase){
         }
       });
     }
+
+    pullFromSupabaseCloud();
+    setInterval(pullFromSupabaseCloud, 1200);
+  } catch(e){}
+}
 
     pullFromSupabaseCloud();
     setInterval(pullFromSupabaseCloud, 1200);

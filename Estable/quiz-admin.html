@@ -3,27 +3,25 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin — Quiz Live Panel</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<title>Admin — Trivia Express</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared-games.css"/>
 <style>
   :root {
-    --bg: #101216;
-    --surface: #191c22;
-    --s2: #21252e;
-    --border: #2d323e;
-    --ink: #e2e7f0;
-    --ink-dim: #828a9e;
-    --a: #5a88cc;
-    --red: #e63946;
-    --blue: #3a86ef;
-    --yellow: #f4a261;
-    --green: #2a9d8f;
-    --accent-green: #00e676;
-    --gold: #ffd700;
+    --bg: #0f1117;
+    --surface: #181b22;
+    --s2: #212631;
+    --border: #2d3342;
+    --ink: #e2e8f0;
+    --ink-dim: #8b95a5;
+    --blue: #3b82f6;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --green: #10b981;
+    --gold: #fbbf24;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -32,20 +30,21 @@
     color: var(--ink);
     height: 100vh;
     display: grid;
-    grid-template-rows: 52px 1fr;
+    grid-template-rows: 54px 1fr;
     overflow: hidden;
   }
 
   /* HEADER */
   header {
-    background: #161920;
+    background: #141720;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
+    z-index: 100;
   }
-  .h-title { font-family: 'DM Serif Display', serif; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+  .h-title { font-family: 'DM Serif Display', serif; font-size: 20px; display: flex; align-items: center; gap: 8px; color: #fff; }
   .h-btns { display: flex; gap: 10px; align-items: center; }
   .btn-sm {
     padding: 7px 14px;
@@ -57,33 +56,36 @@
     background: var(--surface);
     color: var(--ink);
     transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
-  .btn-sm:hover { border-color: var(--a); color: var(--a); }
+  .btn-sm:hover { border-color: var(--blue); color: var(--blue); }
   .btn-primary { background: var(--blue); color: #fff; border: none; }
   .btn-primary:hover { opacity: .9; }
 
   /* MAIN LAYOUT */
-  .container { display: flex; height: calc(100vh - 52px); width: 100%; overflow: hidden; }
+  .container { display: flex; height: calc(100vh - 54px); width: 100%; overflow: hidden; }
   .left-col { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--border); }
-  .right-col { width: 380px; padding: 24px; background: var(--surface); display: flex; flex-direction: column; gap: 16px; border-left: 1px solid var(--border); }
+  .right-col { width: 380px; padding: 24px; background: var(--surface); display: flex; flex-direction: column; gap: 16px; border-left: 1px solid var(--border); overflow-y: auto; }
 
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 16px;
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
   .card-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--ink); display: flex; justify-content: space-between; align-items: center; }
 
   /* FORM INPUTS */
   .input-group { display: flex; flex-direction: column; gap: 6px; }
   .input-group label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-dim); }
-  input[type="text"], input[type="number"], select {
+  input[type="text"], input[type="number"], textarea, select {
     width: 100%;
-    padding: 10px;
+    padding: 10px 12px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     background: var(--s2);
@@ -92,27 +94,27 @@
     color: var(--ink);
     outline: none;
   }
-  input:focus { border-color: var(--blue); }
+  input:focus, textarea:focus { border-color: var(--blue); }
 
   .opts-builder { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .opt-item { display: flex; align-items: center; gap: 8px; background: var(--s2); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); }
-  .opt-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-green); }
+  .opt-item { display: flex; align-items: center; gap: 8px; background: var(--s2); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); }
+  .opt-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--green); }
 
   /* PIN DISPLAY & LOBBY */
   .pin-banner {
-    background: linear-gradient(135deg, rgba(58,134,239,.15), rgba(42,157,143,.15));
-    border: 1px solid var(--blue);
+    background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(16,185,129,.12));
+    border: 1px solid rgba(59,130,246,.3);
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     text-align: center;
   }
-  .pin-code { font-family: 'DM Mono', monospace; font-size: 54px; font-weight: 700; letter-spacing: 6px; color: var(--blue); }
-  
-  .players-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .pin-code { font-family: 'DM Mono', monospace; font-size: 48px; font-weight: 700; letter-spacing: 6px; color: var(--blue); }
+
+  .players-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
   .player-badge { background: var(--s2); border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 
   /* CHART BARS */
-  .chart-container { display: flex; height: 180px; align-items: flex-end; gap: 16px; padding: 10px 0; }
+  .chart-container { display: flex; height: 160px; align-items: flex-end; gap: 16px; padding: 10px 0; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
   .bar { width: 100%; border-radius: 8px 8px 0 0; transition: height .5s ease; min-height: 4px; }
   .bar.red { background: var(--red); }
@@ -121,68 +123,44 @@
   .bar.green { background: var(--green); }
   .bar-count { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; }
 
-  /* PODIUM */
-  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; height: 200px; margin-top: 20px; }
-  .pod-step { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 90px; border-radius: 12px 12px 0 0; padding: 10px; font-weight: 700; }
-  .pod-1 { height: 160px; background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; }
-  .pod-2 { height: 120px; background: linear-gradient(135deg, #c0c0c0, #708090); color: #000; }
-  .pod-3 { height: 90px; background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
+  /* EXPLANATION CARD (NOTA PÚBLICA) */
+  .exp-box {
+    background: rgba(59,130,246,.1);
+    border: 1px solid rgba(59,130,246,.3);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .exp-lbl { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #60a5fa; }
+  .exp-txt { font-family: 'DM Serif Display', serif; font-size: 16px; color: #fff; line-height: 1.4; }
 
-  /* RESPONSIVE DESIGN FOR MOBILE & TABLETS */
+  /* PODIUM */
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; height: 180px; margin-top: 14px; }
+  .pod-step { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 90px; border-radius: 12px 12px 0 0; padding: 10px; font-weight: 700; }
+  .pod-1 { height: 150px; background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; }
+  .pod-2 { height: 110px; background: linear-gradient(135deg, #c0c0c0, #708090); color: #000; }
+  .pod-3 { height: 80px; background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
+
   @media (max-width: 860px) {
-    body {
-      height: auto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    header {
-      height: auto;
-      padding: 10px 14px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .h-title {
-      font-size: 16px;
-      width: 100%;
-      text-align: center;
-    }
-    .h-btns {
-      width: 100%;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .container {
-      height: auto;
-      flex-direction: column;
-      overflow: visible;
-    }
-    .left-col {
-      padding: 14px;
-      border-right: none;
-      overflow: visible;
-    }
-    .right-col {
-      width: 100%;
-      padding: 14px;
-      border-left: none;
-      border-top: 1px solid var(--border);
-    }
-    .opts-builder {
-      grid-template-columns: 1fr;
-    }
-    .pin-code {
-      font-size: 40px;
-      letter-spacing: 4px;
-    }
+    body { height: auto; min-height: 100vh; display: flex; flex-direction: column; overflow-y: auto; }
+    header { height: auto; padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+    .h-title { font-size: 16px; width: 100%; text-align: center; }
+    .h-btns { width: 100%; flex-wrap: wrap; justify-content: center; }
+    .container { height: auto; flex-direction: column; overflow: visible; }
+    .left-col { padding: 14px; border-right: none; overflow: visible; }
+    .right-col { width: 100%; padding: 14px; border-left: none; border-top: 1px solid var(--border); }
+    .opts-builder { grid-template-columns: 1fr; }
+    .pin-code { font-size: 38px; }
   }
 </style>
 </head>
+<body>
 <div class="games-menu-overlay" id="gamesOverlay"></div>
 
 <header>
-  <div class="h-title">🎮 Quiz Live — Panel de Control</div>
+  <div class="h-title">🎯 Trivia Express — Panel de Control</div>
   <div class="h-btns">
     <div style="position:relative; z-index:9999;">
       <button class="games-trigger" id="gamesTrigger">🎮 Zona de Juegos <span class="arrow">▼</span></button>
@@ -199,7 +177,7 @@
         <div class="games-sep"></div>
         <a class="game-card quiz" href="quiz-admin.html">
           <div class="game-icon">🎯</div>
-          <div class="game-info"><span class="game-name">Quiz Kahoot</span><span class="game-desc">Trivia multijugador con celulares</span></div>
+          <div class="game-info"><span class="game-name">Trivia Express</span><span class="game-desc">Trivia multijugador con celulares</span></div>
           <span class="game-badge active">Activo</span>
         </a>
         <a class="game-card jeopardy" href="jeopardy-admin.html">
@@ -229,6 +207,10 @@
         </a>
       </div>
     </div>
+
+    <button id="adminSoundBtn" class="btn-sm" title="Sonido activado (Clic para silenciar)">🔊 Sonido</button>
+    <button id="sessionResetBtn" class="btn-sm">↺ Resetear sesión</button>
+    <button id="newSessionBtn" class="btn-sm" style="background:#1e293b;border:1px solid #d97706;color:#fbbf24;">📦 Nueva sesión</button>
   </div>
 </header>
 
@@ -236,19 +218,19 @@
   <!-- LEFT COLUMN: CREATOR & GAME CONTROL -->
   <div class="left-col">
 
-    <!-- 1. CREAR SESIÓN / PIN BANNER -->
+    <!-- 1. PIN BANNER -->
     <div class="pin-banner" id="pinBanner">
       <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink-dim);">PIN para los estudiantes</div>
       <div class="pin-code" id="pinDisplay">----</div>
-      <div style="font-size:13px;color:var(--ink-dim);margin-top:4px;">Los alumnos deben entrar a <strong>play.html</strong> e ingresar este PIN</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-top:4px;">Los alumnos deben ingresar a <strong>play.html</strong> e introducir este PIN</div>
     </div>
 
-    <!-- 2. EDITOR DE PREGUNTAS -->
+    <!-- 2. EDITOR DE PREGUNTAS CON NOTAS PÚBLICAS Y PRIVADAS -->
     <div class="card">
-      <div class="card-title">📝 Creador de Preguntas del Quiz</div>
+      <div class="card-title">📝 Creador de Preguntas — Trivia Express</div>
       <div class="input-group">
-        <label>Escribe la Pregunta</label>
-        <input type="text" id="qTextInput" placeholder="Ej. ¿Cuál es el planeta más cercano al Sol?"/>
+        <label>Texto de la Pregunta</label>
+        <input type="text" id="qTextInput" placeholder="Ej. ¿Cuál es el órgano principal del sistema circulatorio?"/>
       </div>
       <div class="opts-builder">
         <div class="opt-item"><input type="radio" name="correctOpt" value="0" checked/><input type="text" id="opt0Input" placeholder="Opción A (Rojo ▲)"/></div>
@@ -256,30 +238,39 @@
         <div class="opt-item"><input type="radio" name="correctOpt" value="2"/><input type="text" id="opt2Input" placeholder="Opción C (Amarillo ●)"/></div>
         <div class="opt-item"><input type="radio" name="correctOpt" value="3"/><input type="text" id="opt3Input" placeholder="Opción D (Verde ■)"/></div>
       </div>
-      <button class="btn-sm btn-primary" id="addQuestionBtn" style="align-self:flex-end;">+ Agregar Pregunta</button>
+      <div class="input-group">
+        <label style="color:#60a5fa;">💡 Nota Pública / Explicación Pedagógica (Se proyecta a los alumnos)</label>
+        <textarea id="qExplanationInput" rows="2" placeholder="Explica por qué es la respuesta correcta o agrega un dato de refuerzo para la clase..."></textarea>
+      </div>
+      <div class="input-group">
+        <label style="color:var(--ink-dim);">🔒 Notas Privadas del Tutor (Solo visibles para usted)</label>
+        <textarea id="qPrivateNoteInput" rows="2" placeholder="Notas internas o apuntes de seguimiento pedagógico personal..."></textarea>
+      </div>
+      <button class="btn-sm btn-primary" id="addQuestionBtn" style="align-self:flex-end;">+ Agregar Pregunta a la Trivia</button>
     </div>
 
     <!-- 3. LISTA DE PREGUNTAS Y BOTÓN INICIAR -->
     <div class="card">
       <div class="card-title">
-        <span>Preguntas del Quiz (<span id="qCount">0</span>)</span>
+        <span>Preguntas de la Trivia (<span id="qCount">0</span>)</span>
         <button class="btn-sm btn-primary" id="createSessionBtn">🚀 Iniciar Partida (Generar PIN)</button>
       </div>
-      <div id="questionsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="questionsList" style="display:flex;flex-direction:column;gap:10px;"></div>
     </div>
 
     <!-- 4. CONTROLES DE LA PARTIDA EN VIVO -->
     <div class="card" id="gameControlsCard" style="display:none;">
       <div class="card-title" id="gameStatusTitle">Estado de la Partida: LOBBY</div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn-sm btn-primary" id="startQuizBtn">▶ Iniciar Primera Pregunta</button>
-        <button class="btn-sm" id="showResultsBtn" style="display:none;">📊 Mostrar Resultados</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-sm btn-primary" id="startQuizBtn">▶ Iniciar Pregunta Actual</button>
+        <button class="btn-sm" id="showResultsBtn" style="display:none;">📊 Mostrar Resultados y Respuestas</button>
+        <button class="btn-sm" id="toggleExplanationBtn" style="display:none;background:#2563eb;color:#fff;">💡 Mostrar Explicación a la Clase</button>
         <button class="btn-sm btn-primary" id="nextQuestionBtn" style="display:none;">▶ Siguiente Pregunta</button>
         <button class="btn-sm" id="showPodiumBtn" style="display:none;background:var(--gold);color:#000;">🏆 Ver Podio Final</button>
       </div>
     </div>
 
-    <!-- 5. GRÁFICO DE RESULTADOS POR PREGUNTA -->
+    <!-- 5. GRÁFICO DE RESULTADOS Y EXPLICACIÓN -->
     <div class="card" id="resultsCard" style="display:none;">
       <div class="card-title">Respuestas de la Clase</div>
       <div class="chart-container">
@@ -288,11 +279,15 @@
         <div class="bar-col"><span class="bar-count" id="count2">0</span><div class="bar yellow" id="bar2"></div><span>● C</span></div>
         <div class="bar-col"><span class="bar-count" id="count3">0</span><div class="bar green" id="bar3"></div><span>■ D</span></div>
       </div>
+      <div class="exp-box" id="adminExpBox" style="display:none;">
+        <span class="exp-lbl">💡 Nota Pública / Explicación:</span>
+        <span class="exp-txt" id="adminExpTxt">—</span>
+      </div>
     </div>
 
     <!-- 6. PODIO FINAL -->
     <div class="card" id="podiumCard" style="display:none;">
-      <div class="card-title" style="text-align:center;width:100%;">🏆 ¡GANADORES DEL QUIZ!</div>
+      <div class="card-title" style="text-align:center;width:100%;">🏆 ¡GANADORES DE TRIVIA EXPRESS!</div>
       <div class="podium">
         <div class="pod-step pod-2"><span style="font-size:24px;">🥈</span><span id="pod2Name">-</span></div>
         <div class="pod-step pod-1"><span style="font-size:32px;">🥇</span><span id="pod1Name">-</span></div>
@@ -318,14 +313,23 @@ var DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 var supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, DEFAULT_SUPABASE_KEY) : null;
 var questions = [];
 var activeSession = null;
+var localChannel = null;
+var responsesForCurrentQ = [];
 
-/* CREAR PREGUNTA EN LOCAL */
+/* NOTIFICAR MODO TRIVIA AL CARGAR */
+if(window.GameEngine && GameEngine.broadcastGameMode){
+  GameEngine.broadcastGameMode('quiz');
+}
+
+/* AGREGAR PREGUNTA */
 document.getElementById('addQuestionBtn').addEventListener('click', function(){
   var qText = document.getElementById('qTextInput').value.trim();
   var opt0 = document.getElementById('opt0Input').value.trim();
   var opt1 = document.getElementById('opt1Input').value.trim();
   var opt2 = document.getElementById('opt2Input').value.trim();
   var opt3 = document.getElementById('opt3Input').value.trim();
+  var explanation = document.getElementById('qExplanationInput').value.trim();
+  var privateNote = document.getElementById('qPrivateNoteInput').value.trim();
   var correctOpt = parseInt(document.querySelector('input[name="correctOpt"]:checked').value);
 
   if(!qText || !opt0 || !opt1){ alert('Ingresa el texto de la pregunta y al menos 2 opciones.'); return; }
@@ -333,7 +337,9 @@ document.getElementById('addQuestionBtn').addEventListener('click', function(){
   questions.push({
     question: qText,
     options: [opt0, opt1, opt2 || '—', opt3 || '—'],
-    correct_index: correctOpt
+    correct_index: correctOpt,
+    explanation: explanation || '',
+    private_note: privateNote || ''
   });
 
   document.getElementById('qTextInput').value = '';
@@ -341,8 +347,11 @@ document.getElementById('addQuestionBtn').addEventListener('click', function(){
   document.getElementById('opt1Input').value = '';
   document.getElementById('opt2Input').value = '';
   document.getElementById('opt3Input').value = '';
+  document.getElementById('qExplanationInput').value = '';
+  document.getElementById('qPrivateNoteInput').value = '';
 
   renderQuestions();
+  saveQuestionsLocally();
 });
 
 function renderQuestions(){
@@ -351,17 +360,54 @@ function renderQuestions(){
   list.innerHTML = '';
   questions.forEach(function(q, i){
     var div = document.createElement('div');
-    div.style.cssText = 'background:var(--s2);padding:10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;';
-    div.innerHTML = '<span><strong>#'+(i+1)+'</strong> '+q.question+'</span><button class="btn-sm" style="color:var(--red);" data-idx="'+i+'">&times;</button>';
+    div.style.cssText = 'background:var(--s2);padding:12px;border-radius:10px;font-size:13px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--border);';
+    
+    var expBadge = q.explanation ? '<div style="font-size:11px;color:#60a5fa;">💡 Nota pública: ' + q.explanation + '</div>' : '';
+    var privBadge = q.private_note ? '<div style="font-size:11px;color:var(--ink-dim);">🔒 Nota privada: ' + q.private_note + '</div>' : '';
+
+    div.innerHTML = 
+      '<div style="display:flex;justify-content:space-between;align-items:center;">'
+      + '<span><strong>#'+(i+1)+'</strong> '+q.question+'</span>'
+      + '<button class="btn-sm" style="color:var(--red);" data-idx="'+i+'">&times;</button>'
+      + '</div>' + expBadge + privBadge;
+
     div.querySelector('button').addEventListener('click', function(){
-      questions.splice(i, 1); renderQuestions();
+      questions.splice(i, 1);
+      renderQuestions();
+      saveQuestionsLocally();
     });
     list.appendChild(div);
   });
 }
 
-/* GENERAR SESIÓN Y PIN */
-var localChannel = null;
+function saveQuestionsLocally(){
+  try {
+    localStorage.setItem('trivia_express_questions', JSON.stringify(questions));
+  } catch(e){}
+}
+
+/* GENERAR O CARGAR SESIÓN */
+function setupChannel(pin){
+  if(window.BroadcastChannel){
+    if(localChannel) localChannel.close();
+    localChannel = new BroadcastChannel('quiz_channel_' + pin);
+    localChannel.onmessage = function(e){
+      if(!e.data) return;
+      if(e.data.type === 'PLAYER_JOIN' && e.data.player){
+        var p = e.data.player;
+        var existing = activeSession.players.find(function(x){ return x.name.toLowerCase() === p.name.toLowerCase(); });
+        if(!existing){
+          activeSession.players.push({ name: p.name, score: 0 });
+          if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaJoin();
+          saveSessionState();
+          renderPlayers(activeSession.players);
+        }
+      } else if(e.data.type === 'ANSWER_SUBMIT' && e.data.response){
+        responsesForCurrentQ.push(e.data.response);
+      }
+    };
+  }
+}
 
 document.getElementById('createSessionBtn').addEventListener('click', function(){
   if(!questions.length && document.getElementById('qTextInput').value.trim()){
@@ -375,58 +421,33 @@ document.getElementById('createSessionBtn').addEventListener('click', function()
     pin: pin,
     status: 'lobby',
     current_question: 0,
+    show_explanation: false,
     questions: JSON.parse(JSON.stringify(questions)),
     players: []
   };
 
   activeSession = payload;
-  
-  // 1. Guardar en localStorage y canal local instantáneo (0ms)
-  try {
-    localStorage.setItem('quiz_game_' + pin, JSON.stringify(payload));
-    localStorage.setItem('quiz_latest_pin', pin);
-  } catch(e){}
+  saveSessionState();
+  setupChannel(pin);
 
-  if(window.BroadcastChannel){
-    if(localChannel) localChannel.close();
-    localChannel = new BroadcastChannel('quiz_channel_' + pin);
-    localChannel.onmessage = function(e){
-      if(!e.data) return;
-      if(e.data.type === 'PLAYER_JOIN' && e.data.player){
-        var p = e.data.player;
-        var existing = activeSession.players.find(function(x){ return x.name.toLowerCase() === p.name.toLowerCase(); });
-        if(!existing){
-          activeSession.players.push({ name: p.name, score: 0 });
-          saveSessionState();
-          renderPlayers(activeSession.players);
-        }
-      } else if(e.data.type === 'ANSWER_SUBMIT' && e.data.response){
-        responsesForCurrentQ.push(e.data.response);
-      }
-    };
-  }
-
-  // 2. Sincronizar en Supabase usando la tabla activa 'debate_state'
   if(supabaseClient){
     supabaseClient.from('debate_state').upsert([
       { id: 'quiz_' + pin, state: payload },
       { id: 'quiz_active', state: payload }
     ]).then(function(res){
-      if(!res.error){
-        subscribeToSession();
-      }
+      if(!res.error) subscribeToSession();
     });
   }
 
-  // 3. MOSTRAR LA INTERFAZ INMEDIATAMENTE
   document.getElementById('pinDisplay').textContent = pin;
   document.getElementById('gameControlsCard').style.display = 'flex';
-  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.fanfare();
+  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaJoin();
 });
 
 function saveSessionState(){
   if(!activeSession) return;
   try {
+    localStorage.setItem('trivia_express_active_session', JSON.stringify(activeSession));
     localStorage.setItem('quiz_game_' + activeSession.pin, JSON.stringify(activeSession));
     localStorage.setItem('quiz_latest_pin', activeSession.pin);
   } catch(e){}
@@ -466,41 +487,42 @@ function renderPlayers(players){
   });
 }
 
-/* INICIAR PREGUNTA */
+/* CONTROLES DE PREGUNTA */
 document.getElementById('startQuizBtn').addEventListener('click', function(){
   if(!activeSession) return;
+  activeSession.show_explanation = false;
   updateSessionStatus('question', { question_start: new Date().toISOString() });
   document.getElementById('startQuizBtn').style.display = 'none';
   document.getElementById('showResultsBtn').style.display = 'inline-block';
+  document.getElementById('toggleExplanationBtn').style.display = 'none';
+  document.getElementById('adminExpBox').style.display = 'none';
   document.getElementById('gameStatusTitle').textContent = 'Estado: PREGUNTA ACTIVA #' + (activeSession.current_question + 1);
+  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaCount(false);
 });
 
 function updateSessionStatus(status, extra){
   if(!activeSession) return;
   activeSession.status = status;
   if(extra) Object.assign(activeSession, extra);
-  
   saveSessionState();
 }
 
-/* ESCUCHAR RESPUESTAS Y VER RESULTADOS */
-var responsesForCurrentQ = [];
-function subscribeToResponses(){
-  if(!supabaseClient || !activeSession) return;
-  supabaseClient.channel('responses_' + activeSession.id)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quiz_responses', filter: 'session_id=eq.' + activeSession.id }, function(payload){
-      if(payload.new && payload.new.question_index === activeSession.current_question){
-        responsesForCurrentQ.push(payload.new);
-      }
-    })
-    .subscribe();
-}
-
+/* MOSTRAR RESULTADOS Y NOTA PÚBLICA */
 document.getElementById('showResultsBtn').addEventListener('click', function(){
   updateSessionStatus('results');
   document.getElementById('showResultsBtn').style.display = 'none';
   document.getElementById('resultsCard').style.display = 'flex';
   
+  var curQ = activeSession.questions[activeSession.current_question];
+  if(curQ && curQ.explanation){
+    document.getElementById('toggleExplanationBtn').style.display = 'inline-block';
+    document.getElementById('adminExpTxt').textContent = curQ.explanation;
+    document.getElementById('adminExpBox').style.display = 'flex';
+  } else {
+    document.getElementById('toggleExplanationBtn').style.display = 'none';
+    document.getElementById('adminExpBox').style.display = 'none';
+  }
+
   var isLast = activeSession.current_question >= activeSession.questions.length - 1;
   if(isLast){
     document.getElementById('showPodiumBtn').style.display = 'inline-block';
@@ -508,7 +530,6 @@ document.getElementById('showResultsBtn').addEventListener('click', function(){
     document.getElementById('nextQuestionBtn').style.display = 'inline-block';
   }
 
-  // Calcular barras
   var counts = [0, 0, 0, 0];
   responsesForCurrentQ.forEach(function(r){ if(r.chosen_option >= 0 && r.chosen_option <= 3) counts[r.chosen_option]++; });
   var max = Math.max(1, counts[0], counts[1], counts[2], counts[3]);
@@ -517,6 +538,15 @@ document.getElementById('showResultsBtn').addEventListener('click', function(){
     document.getElementById('count' + i).textContent = counts[i];
     document.getElementById('bar' + i).style.height = ((counts[i] / max) * 100) + '%';
   }
+  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaCorrect();
+});
+
+/* TOGGLE EXPLICACIÓN PÚBLICA */
+document.getElementById('toggleExplanationBtn').addEventListener('click', function(){
+  if(!activeSession) return;
+  activeSession.show_explanation = !activeSession.show_explanation;
+  document.getElementById('toggleExplanationBtn').textContent = activeSession.show_explanation ? '✓ Explicación Proyectada' : '💡 Mostrar Explicación a la Clase';
+  saveSessionState();
 });
 
 /* SIGUIENTE PREGUNTA */
@@ -524,9 +554,11 @@ document.getElementById('nextQuestionBtn').addEventListener('click', function(){
   responsesForCurrentQ = [];
   document.getElementById('resultsCard').style.display = 'none';
   document.getElementById('nextQuestionBtn').style.display = 'none';
+  document.getElementById('toggleExplanationBtn').style.display = 'none';
   document.getElementById('startQuizBtn').style.display = 'inline-block';
   
   var nextIdx = activeSession.current_question + 1;
+  activeSession.show_explanation = false;
   updateSessionStatus('lobby', { current_question: nextIdx });
   document.getElementById('gameStatusTitle').textContent = 'Estado: ESPERANDO PREGUNTA #' + (nextIdx + 1);
 });
@@ -536,6 +568,7 @@ document.getElementById('showPodiumBtn').addEventListener('click', function(){
   updateSessionStatus('finished');
   document.getElementById('resultsCard').style.display = 'none';
   document.getElementById('showPodiumBtn').style.display = 'none';
+  document.getElementById('toggleExplanationBtn').style.display = 'none';
   document.getElementById('podiumCard').style.display = 'flex';
 
   var players = (activeSession.players || []).slice();
@@ -544,7 +577,86 @@ document.getElementById('showPodiumBtn').addEventListener('click', function(){
   document.getElementById('pod1Name').textContent = players[0] ? players[0].name : '-';
   document.getElementById('pod2Name').textContent = players[1] ? players[1].name : '-';
   document.getElementById('pod3Name').textContent = players[2] ? players[2].name : '-';
+
+  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaPodium();
 });
+
+/* BOTONES DE CABECERA: RESET Y NUEVA SESIÓN */
+document.getElementById('newSessionBtn').addEventListener('click', function(){
+  if(confirm('¿Deseas iniciar una nueva sesión de Trivia Express? Se creará un nuevo PIN.')){
+    localStorage.removeItem('trivia_express_active_session');
+    activeSession = null;
+    document.getElementById('createSessionBtn').click();
+  }
+});
+
+document.getElementById('sessionResetBtn').addEventListener('click', function(){
+  if(activeSession && confirm('¿Deseas reiniciar la sesión actual? Las puntuaciones volverán a cero.')){
+    activeSession.players.forEach(function(p){ p.score = 0; });
+    activeSession.current_question = 0;
+    activeSession.status = 'lobby';
+    activeSession.show_explanation = false;
+    responsesForCurrentQ = [];
+    saveSessionState();
+    renderPlayers(activeSession.players);
+    document.getElementById('resultsCard').style.display = 'none';
+    document.getElementById('podiumCard').style.display = 'none';
+    document.getElementById('gameControlsCard').style.display = 'flex';
+    document.getElementById('startQuizBtn').style.display = 'inline-block';
+    document.getElementById('showResultsBtn').style.display = 'none';
+    document.getElementById('nextQuestionBtn').style.display = 'none';
+    document.getElementById('showPodiumBtn').style.display = 'none';
+    document.getElementById('gameStatusTitle').textContent = 'Estado: LOBBY';
+  }
+});
+
+var soundBtn = document.getElementById('adminSoundBtn');
+if(soundBtn && window.GameEngine){
+  soundBtn.textContent = GameEngine.isMuted() ? '🔇 Sonido' : '🔊 Sonido';
+  soundBtn.addEventListener('click', function(){
+    var muted = GameEngine.toggleMute();
+    soundBtn.textContent = muted ? '🔇 Sonido' : '🔊 Sonido';
+  });
+}
+
+/* CARGA INICIAL PERSISTENTE */
+try {
+  var savedQs = JSON.parse(localStorage.getItem('trivia_express_questions') || '[]');
+  if(savedQs && savedQs.length){
+    questions = savedQs;
+    renderQuestions();
+  } else {
+    // Preguntas iniciales de demostración
+    questions = [
+      {
+        question: '¿Cuál es el planeta más grande de nuestro sistema solar?',
+        options: ['Marte', 'Júpiter', 'Saturno', 'Neptuno'],
+        correct_index: 1,
+        explanation: 'Júpiter es el planeta más grande del sistema solar, con una masa más de dos veces superior a la de todos los demás planetas juntos.',
+        private_note: 'Recordar a los alumnos la diferencia con Saturno (anillos).'
+      },
+      {
+        question: '¿Qué proceso utilizan las plantas para convertir la luz solar en energía?',
+        options: ['Respiración celular', 'Fotosíntesis', 'Fermentación', 'Transpiración'],
+        correct_index: 1,
+        explanation: 'La fotosíntesis permite a las plantas transformar agua y dióxido de carbono en glucosa y oxígeno utilizando la luz solar.',
+        private_note: 'Pregunta clave del bloque de biología.'
+      }
+    ];
+    renderQuestions();
+    saveQuestionsLocally();
+  }
+
+  var savedSess = JSON.parse(localStorage.getItem('trivia_express_active_session') || 'null');
+  if(savedSess && savedSess.pin){
+    activeSession = savedSess;
+    document.getElementById('pinDisplay').textContent = savedSess.pin;
+    document.getElementById('gameControlsCard').style.display = 'flex';
+    renderPlayers(savedSess.players || []);
+    setupChannel(savedSess.pin);
+    subscribeToSession();
+  }
+} catch(e){}
 </script>
 <script src="shared-games.js"></script>
 <script>GameEngine.initMenu();</script>

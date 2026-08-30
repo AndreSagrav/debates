@@ -284,9 +284,51 @@ var GameEngine = (function(){
     sfxTimeUp();
   }
 
+  /* ── Efectos Exclusivos de Trivia Express (Diferentes a Debates) ── */
+  function sfxTriviaJoin(){
+    _tone(587.33, 0.08, 'sine', 0.25, 0); // D5
+    _tone(880, 0.12, 'sine', 0.28, 0.06);   // A5
+    _tone(1174.66, 0.18, 'sine', 0.32, 0.12); // D6
+  }
+
+  function sfxTriviaCount(isUrgent){
+    if(isUrgent){
+      _tone(784, 0.04, 'square', 0.25, 0);
+      _tone(880, 0.06, 'triangle', 0.3, 0.03);
+    } else {
+      _tone(440, 0.05, 'triangle', 0.2, 0);
+      _tone(554.37, 0.05, 'sine', 0.15, 0.04);
+    }
+  }
+
+  function sfxTriviaCorrect(){
+    // Arpegio mayor brillante ascendente
+    _tone(523.25, 0.1, 'triangle', 0.3, 0);      // C5
+    _tone(659.25, 0.1, 'triangle', 0.32, 0.08);   // E5
+    _tone(783.99, 0.12, 'sine', 0.35, 0.16);     // G5
+    _tone(1046.50, 0.28, 'sine', 0.4, 0.24);     // C6
+  }
+
+  function sfxTriviaWrong(){
+    // Tono descendente de error
+    _tone(370, 0.14, 'sawtooth', 0.22, 0);
+    _tone(277.18, 0.22, 'sawtooth', 0.24, 0.1);
+    _tone(220, 0.3, 'sine', 0.26, 0.2);
+  }
+
+  function sfxTriviaPodium(){
+    // Fanfarria triunfal de campeonato
+    var notes = [523.25, 523.25, 523.25, 659.25, 783.99, 1046.50];
+    var delays = [0, 0.12, 0.24, 0.38, 0.52, 0.70];
+    var lens   = [0.1, 0.1, 0.1, 0.14, 0.18, 0.55];
+    for(var i = 0; i < notes.length; i++){
+      _tone(notes[i], lens[i], 'triangle', 0.35, delays[i]);
+      _tone(notes[i]*1.002, lens[i], 'sine', 0.25, delays[i]);
+    }
+  }
+
   /* ── Anti-Cheat Helpers ── */
   function validateResponse(sessionId, playerName, questionIndex, existingResponses){
-    // Check duplicate: same player can't answer same question twice
     var isDuplicate = existingResponses.some(function(r){
       return r.player_name === playerName && r.question_index === questionIndex;
     });
@@ -331,9 +373,9 @@ var GameEngine = (function(){
       });
     }
 
-    // Escuchar clics en las tarjetas del menú para notificar a la Vista Pública Universal
+    // Escuchar clics en las tarjetas del menú para cambiar de juego en la MISMA pestaña
     menu.querySelectorAll('.game-card').forEach(function(card){
-      card.addEventListener('click', function(){
+      card.addEventListener('click', function(e){
         var mode = 'debates';
         if(card.classList.contains('quiz')) mode = 'quiz';
         else if(card.classList.contains('jeopardy')) mode = 'jeopardy';
@@ -342,26 +384,7 @@ var GameEngine = (function(){
         else if(card.classList.contains('dijeron')) mode = 'dijeron';
         else if(card.classList.contains('batalla')) mode = 'batalla';
 
-        // Redireccionar la ventana secundaria compartida si está abierta
-        try {
-          var w = window.open('', 'shared_public_window');
-          if(w && !w.closed){
-            if(mode === 'debates'){
-              // Escribir el HTML del debate original
-              if(window.buildPublicHTML){
-                w.document.open();
-                w.document.write(buildPublicHTML());
-                w.document.close();
-              } else {
-                w.location.href = 'index.html?view=public';
-              }
-            } else if(mode === 'jeopardy'){
-              w.location.href = 'jeopardy-board.html';
-            } else if(mode === 'millonario'){
-              w.location.href = 'millonario-screen.html';
-            }
-          }
-        } catch(e){}
+        broadcastGameMode(mode);
       });
     });
   }
@@ -373,7 +396,11 @@ var GameEngine = (function(){
     if(window.BroadcastChannel){
       try {
         var ch = new BroadcastChannel('universal_public_channel');
-        ch.postMessage({ type: 'CHANGE_GAME', mode: mode });
+        ch.postMessage({ type: 'CHANGE_GAME', mode: mode, activeMode: mode });
+      } catch(e){}
+      try {
+        var ch2 = new BroadcastChannel('debate_channel');
+        ch2.postMessage({ type: 'DEBATE_STATE', activeMode: mode });
       } catch(e){}
     }
     var c = getClient();
@@ -391,6 +418,7 @@ var GameEngine = (function(){
     findByPIN: findByPIN,
     subscribe: subscribe,
     initMenu: initMenu,
+    broadcastGameMode: broadcastGameMode,
     validateResponse: validateResponse,
 
     // Sound
@@ -398,22 +426,29 @@ var GameEngine = (function(){
     toggleMute: toggleMute,
     setMuted: setMuted,
     sfx: {
-      correct:      sfxCorrect,
-      wrong:        sfxWrong,
-      tick:         sfxTick,
-      tickUrgent:   sfxTickUrgent,
-      timeUp:       sfxTimeUp,
-      rouletteStep: sfxRouletteStep,
-      rouletteLand: sfxRouletteLand,
-      reveal:       sfxReveal,
-      fanfare:      sfxFanfare,
-      suspense:     sfxSuspense,
-      click:        sfxClick,
-      join:         sfxJoin,
-      countdown:    sfxCountdown,
-      roulette:     sfxRoulette,
-      levelUp:      sfxLevelUp,
-      buzzer:       sfxBuzzer
+      correct:        sfxCorrect,
+      wrong:          sfxWrong,
+      tick:           sfxTick,
+      tickUrgent:     sfxTickUrgent,
+      timeUp:         sfxTimeUp,
+      rouletteStep:   sfxRouletteStep,
+      rouletteLand:   sfxRouletteLand,
+      reveal:         sfxReveal,
+      fanfare:        sfxFanfare,
+      suspense:       sfxSuspense,
+      click:          sfxClick,
+      join:           sfxJoin,
+      countdown:      sfxCountdown,
+      roulette:       sfxRoulette,
+      levelUp:        sfxLevelUp,
+      buzzer:         sfxBuzzer,
+
+      // Trivia Express Exclusive Sounds
+      triviaJoin:     sfxTriviaJoin,
+      triviaCount:    sfxTriviaCount,
+      triviaCorrect:  sfxTriviaCorrect,
+      triviaWrong:    sfxTriviaWrong,
+      triviaPodium:   sfxTriviaPodium
     }
   };
 })();
