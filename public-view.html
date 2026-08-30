@@ -129,6 +129,26 @@
   }
 
   /* ═══════════════════════════════════════════════════════════
+     WIDGET FRAMES SYSTEM (DEBATES VS TRIVIA EXPRESS VS MINIJUEGOS)
+     ═══════════════════════════════════════════════════════════ */
+  .widget-stage {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  .widget-frame {
+    display: none !important;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .widget-frame.active {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
      1. DEBATES FRAME (DISEÑO EDITORIAL ORIGINAL IDÉNTICO)
      ═══════════════════════════════════════════════════════════ */
   #frame-debates {
@@ -136,14 +156,14 @@
     color: var(--deb-ink);
     height: 100%;
     min-height: 100%;
-    display: none !important;
-    flex-direction: column;
     justify-content: space-between;
     overflow-y: auto;
     position: relative;
   }
   #frame-debates.active {
     display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   #frame-debates .topbar {
@@ -1321,7 +1341,7 @@
 <div class="widget-stage">
 
   <!-- 1. DEBATES FRAME (DISEÑO ORIGINAL EDITORIAL EXACTO) -->
-  <div class="widget-frame active" id="frame-debates">
+  <div class="widget-frame" id="frame-debates">
     <div class="q-band"><div id="pubQuestion"><span class="q-empty">Esperando pregunta…</span></div></div>
     <div class="main">
       <div class="name-card a">
@@ -1536,24 +1556,18 @@ var modeTitles = {
 (function(){
   var params = new URLSearchParams(window.location.search);
   var forceMode = params.get('mode');
+  if(!forceMode){
+    forceMode = localStorage.getItem('active_game_mode') || 'debates';
+  }
   if(forceMode && modeTitles[forceMode]){
-    _lockedMode = forceMode;
+    _lockedMode = (params.get('mode') ? forceMode : null);
     currentMode = forceMode;
   }
 })();
 
 function switchWidgetMode(mode){
   if(!mode || !modeTitles[mode]) return;
-  if(_lockedMode && mode !== _lockedMode) return; // Bloquear cambios si modo está forzado por URL
-  if(currentMode === mode){
-    // Asegurar que el frame correcto tenga .active
-    var curFrame = document.getElementById('frame-' + mode);
-    if(curFrame && !curFrame.classList.contains('active')){
-      document.querySelectorAll('.widget-frame').forEach(function(f){ f.classList.remove('active'); });
-      curFrame.classList.add('active');
-    }
-    return;
-  }
+  if(_lockedMode && mode !== _lockedMode) return;
   currentMode = mode;
   try { localStorage.setItem('active_game_mode', mode); } catch(e){}
   
@@ -1576,6 +1590,9 @@ function switchWidgetMode(mode){
     document.body.style.color = 'var(--text-light)';
   }
 }
+
+// Ejecutar inmediatamente para asegurar el marco activo desde el milisegundo 0
+switchWidgetMode(currentMode);
 
 var _lastRenderedQText = null;
 function renderQuestion(text){
@@ -2429,18 +2446,6 @@ function pullAll(){
   if(!ok) ok = pullFromStorage();
   if(!ok) requestState();
 }
-
-// Detectar ?mode=quiz en la URL para forzar modo Quiz de inmediato
-(function(){
-  var params = new URLSearchParams(window.location.search);
-  var forceMode = params.get('mode');
-  if(forceMode && modeTitles[forceMode]){
-    _lockedMode = forceMode;
-    currentMode = 'x'; // forzar re-render
-    switchWidgetMode(forceMode);
-    localStorage.setItem('active_game_mode', forceMode);
-  }
-})();
 
 setInterval(pullAll, 250);
 pullAll();
