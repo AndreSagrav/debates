@@ -1431,7 +1431,18 @@ var modeTitles = {
 
 function switchWidgetMode(mode){
   if(!mode || !modeTitles[mode]) return;
+  if(currentMode === mode){
+    // Asegurar que el frame correcto tenga .active
+    var curFrame = document.getElementById('frame-' + mode);
+    if(curFrame && !curFrame.classList.contains('active')){
+      document.querySelectorAll('.widget-frame').forEach(function(f){ f.classList.remove('active'); });
+      curFrame.classList.add('active');
+    }
+    return;
+  }
   currentMode = mode;
+  try { localStorage.setItem('active_game_mode', mode); } catch(e){}
+  
   var badge = document.getElementById('pubModeBadge');
   if(badge) badge.textContent = modeTitles[mode];
 
@@ -1670,9 +1681,12 @@ function apply(d){
   if(!d) return;
 
   // Auto-switch mode si viene especificado
-  if(d.activeMode && d.activeMode !== currentMode){
-    switchWidgetMode(d.activeMode);
+  if(d.activeMode){
+    if(d.activeMode !== currentMode) switchWidgetMode(d.activeMode);
   }
+
+  // Si la vista está en Trivia Express u otro minijuego, no sobreescribir con datos de debates
+  if(currentMode !== 'debates') return;
 
   // Resolver nombres si vienen como ID o directamente
   var resolvedNameA = d.nameA;

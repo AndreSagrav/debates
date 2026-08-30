@@ -218,11 +218,16 @@
   <!-- LEFT COLUMN: CREATOR & GAME CONTROL -->
   <div class="left-col">
 
-    <!-- 1. PIN BANNER -->
+    <!-- 1. PIN BANNER CON GENERADOR Y ENLACE -->
     <div class="pin-banner" id="pinBanner">
-      <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink-dim);">PIN para los estudiantes</div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink-dim);">PIN DE ACCESO PARA ESTUDIANTES</div>
       <div class="pin-code" id="pinDisplay">----</div>
-      <div style="font-size:13px;color:var(--ink-dim);margin-top:4px;">Los alumnos deben ingresar a <strong>play.html</strong> e introducir este PIN</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn-sm" id="regenPinBtn" style="background:#1e293b;border:1px solid #3b82f6;color:#60a5fa;">🎲 Cambiar PIN</button>
+        <button class="btn-sm" id="copyPinLinkBtn" style="background:#1e293b;border:1px solid #10b981;color:#34d399;">🔗 Copiar Enlace Directo</button>
+        <a href="play.html" target="_blank" class="btn-sm" style="background:#1e293b;border:1px solid #d97706;color:#fbbf24;text-decoration:none;">📱 Abrir play.html</a>
+      </div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;">Los alumnos deben entrar a <strong>play.html</strong> con el PIN o usar el enlace directo</div>
     </div>
 
     <!-- 2. EDITOR DE PREGUNTAS CON NOTAS PÚBLICAS Y PRIVADAS -->
@@ -759,8 +764,71 @@ try {
     renderPlayers(savedSess.players || []);
     setupChannel(savedSess.pin);
     subscribeToSession();
+  } else {
+    // Generar automáticamente el PIN al ingresar para que esté listo de inmediato
+    var autoPin = String(Math.floor(1000 + Math.random() * 9000));
+    activeSession = {
+      id: 'session_' + Date.now(),
+      pin: autoPin,
+      status: 'lobby',
+      current_question: 0,
+      show_explanation: false,
+      questions: JSON.parse(JSON.stringify(questions)),
+      players: []
+    };
+    saveSessionState();
+    document.getElementById('pinDisplay').textContent = autoPin;
+    document.getElementById('gameControlsCard').style.display = 'flex';
+    setupChannel(autoPin);
+    if(supabaseClient){
+      supabaseClient.from('debate_state').upsert([
+        { id: 'quiz_' + autoPin, state: activeSession },
+        { id: 'quiz_active', state: activeSession }
+      ]).then(function(res){ if(!res.error) subscribeToSession(); });
+    }
   }
 } catch(e){}
+
+/* BOTONES DEL BANNER DE PIN */
+var regenPinBtn = document.getElementById('regenPinBtn');
+if(regenPinBtn){
+  regenPinBtn.addEventListener('click', function(){
+    var newPin = String(Math.floor(1000 + Math.random() * 9000));
+    if(!activeSession){
+      activeSession = {
+        id: 'session_' + Date.now(),
+        status: 'lobby',
+        current_question: 0,
+        show_explanation: false,
+        questions: JSON.parse(JSON.stringify(questions)),
+        players: []
+      };
+    }
+    activeSession.pin = newPin;
+    activeSession.status = 'lobby';
+    document.getElementById('pinDisplay').textContent = newPin;
+    saveSessionState();
+    setupChannel(newPin);
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaJoin();
+  });
+}
+
+var copyPinLinkBtn = document.getElementById('copyPinLinkBtn');
+if(copyPinLinkBtn){
+  copyPinLinkBtn.addEventListener('click', function(){
+    if(!activeSession || !activeSession.pin) return;
+    var url = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'play.html?pin=' + activeSession.pin;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        alert('✓ Enlace directo para los alumnos copiado:\n' + url);
+      }).catch(function(){
+        prompt('Copia este enlace para tus alumnos:', url);
+      });
+    } else {
+      prompt('Copia este enlace para tus alumnos:', url);
+    }
+  });
+}
 </script>
 <script src="shared-games.js"></script>
 <script>GameEngine.initMenu();</script>
