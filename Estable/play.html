@@ -472,7 +472,7 @@ document.querySelectorAll('.opt-btn').forEach(function(btn){
     var elapsedSec = Math.max(0, (now - questionStartTime) / 1000);
     var qIdx = activeSession.current_question || 0;
     var q = activeSession.questions ? activeSession.questions[qIdx] : null;
-    var correctIdx = q ? parseInt(q.correct || 0) : 0;
+    var correctIdx = q ? (q.correct_index !== undefined ? parseInt(q.correct_index) : parseInt(q.correct || 0)) : 0;
     var isCorrect = (lastChosenOpt === correctIdx);
     var speedBonus = isCorrect ? Math.max(200, 1000 - Math.floor(elapsedSec * 40)) : 0;
 

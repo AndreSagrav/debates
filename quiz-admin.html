@@ -225,6 +225,7 @@
       <div class="pin-code" id="pinDisplay">----</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
         <button class="btn-sm" id="regenPinBtn" style="background:#1e293b;border:1px solid #3b82f6;color:#60a5fa;">🎲 Cambiar PIN</button>
+        <button class="btn-sm" id="addBotsBtn" style="background:#1e293b;border:1px solid #a855f7;color:#c084fc;">🤖 Agregar Bots de Prueba</button>
         <button class="btn-sm" id="copyPinLinkBtn" style="background:#1e293b;border:1px solid #10b981;color:#34d399;">🔗 Copiar Enlace Directo</button>
         <a href="play.html" target="_blank" class="btn-sm" style="background:#1e293b;border:1px solid #d97706;color:#fbbf24;text-decoration:none;">📱 Abrir play.html</a>
       </div>
@@ -621,6 +622,40 @@ function renderPlayers(players){
 }
 
 /* CONTROLES DE PREGUNTA */
+var _adminTimerTimeout = null;
+
+function startQuestionTimer(timeLimit){
+  if(_adminTimerTimeout) clearTimeout(_adminTimerTimeout);
+  _adminTimerTimeout = setTimeout(function(){
+    if(activeSession && activeSession.status === 'question'){
+      var btn = document.getElementById('showResultsBtn');
+      if(btn && btn.style.display !== 'none') btn.click();
+    }
+  }, timeLimit * 1000);
+}
+
+function simulateBotAnswers(questionIndex){
+  if(!activeSession || !activeSession.players) return;
+  var curQ = activeSession.questions[questionIndex];
+  if(!curQ) return;
+  var timeLimit = curQ.time_limit || 30;
+
+  activeSession.players.forEach(function(pl){
+    if(!pl.isBot) return;
+    var delaySec = 2 + Math.random() * Math.min(timeLimit - 3, 10);
+    setTimeout(function(){
+      if(!activeSession || activeSession.status !== 'question' || activeSession.current_question !== questionIndex) return;
+      var isCorrect = Math.random() < 0.85;
+      var chosen = isCorrect ? curQ.correct_index : (curQ.correct_index === 0 ? 1 : 0);
+      var pts = isCorrect ? Math.max(200, 1000 - Math.floor(delaySec * 30)) : 0;
+      pl.score = (pl.score || 0) + pts;
+      responsesForCurrentQ.push({ player_name: pl.name, chosen_option: chosen, is_correct: isCorrect, score: pl.score });
+      saveSessionState();
+      renderPlayers(activeSession.players);
+    }, delaySec * 1000);
+  });
+}
+
 document.getElementById('startQuizBtn').addEventListener('click', function(){
   if(!activeSession) return;
   activeSession.show_explanation = false;
@@ -630,6 +665,11 @@ document.getElementById('startQuizBtn').addEventListener('click', function(){
   document.getElementById('toggleExplanationBtn').style.display = 'none';
   document.getElementById('adminExpBox').style.display = 'none';
   document.getElementById('gameStatusTitle').textContent = 'Estado: PREGUNTA ACTIVA #' + (activeSession.current_question + 1);
+
+  var curQ = activeSession.questions[activeSession.current_question];
+  var timeLimit = (curQ && curQ.time_limit) ? curQ.time_limit : 30;
+  startQuestionTimer(timeLimit);
+  simulateBotAnswers(activeSession.current_question);
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaCount(false);
 });
 
@@ -642,6 +682,7 @@ function updateSessionStatus(status, extra){
 
 /* MOSTRAR RESULTADOS Y NOTA PÚBLICA */
 document.getElementById('showResultsBtn').addEventListener('click', function(){
+  if(_adminTimerTimeout){ clearTimeout(_adminTimerTimeout); _adminTimerTimeout = null; }
   updateSessionStatus('results');
   document.getElementById('showResultsBtn').style.display = 'none';
   document.getElementById('resultsCard').style.display = 'flex';
@@ -687,17 +728,26 @@ document.getElementById('nextQuestionBtn').addEventListener('click', function(){
   responsesForCurrentQ = [];
   document.getElementById('resultsCard').style.display = 'none';
   document.getElementById('nextQuestionBtn').style.display = 'none';
+  document.getElementById('showPodiumBtn').style.display = 'none';
   document.getElementById('toggleExplanationBtn').style.display = 'none';
-  document.getElementById('startQuizBtn').style.display = 'inline-block';
   
   var nextIdx = activeSession.current_question + 1;
+  activeSession.current_question = nextIdx;
   activeSession.show_explanation = false;
-  updateSessionStatus('lobby', { current_question: nextIdx });
-  document.getElementById('gameStatusTitle').textContent = 'Estado: ESPERANDO PREGUNTA #' + (nextIdx + 1);
+  updateSessionStatus('question', { current_question: nextIdx, question_start: new Date().toISOString() });
+  document.getElementById('showResultsBtn').style.display = 'inline-block';
+  document.getElementById('gameStatusTitle').textContent = 'Estado: PREGUNTA ACTIVA #' + (nextIdx + 1);
+
+  var curQ = activeSession.questions[nextIdx];
+  var timeLimit = (curQ && curQ.time_limit) ? curQ.time_limit : 30;
+  startQuestionTimer(timeLimit);
+  simulateBotAnswers(nextIdx);
+  if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaCount(false);
 });
 
 /* PODIO FINAL */
 document.getElementById('showPodiumBtn').addEventListener('click', function(){
+  if(_adminTimerTimeout){ clearTimeout(_adminTimerTimeout); _adminTimerTimeout = null; }
   updateSessionStatus('finished');
   document.getElementById('resultsCard').style.display = 'none';
   document.getElementById('showPodiumBtn').style.display = 'none';
@@ -755,25 +805,67 @@ if(soundBtn && window.GameEngine){
 /* CARGA INICIAL PERSISTENTE */
 try {
   var savedQs = JSON.parse(localStorage.getItem('trivia_express_questions') || '[]');
-  if(savedQs && savedQs.length){
+  if(savedQs && savedQs.length >= 3){
     questions = savedQs;
     renderQuestions();
   } else {
-    // Preguntas iniciales de demostración
+    // Banco de Preguntas precargadas completas
     questions = [
       {
         question: '¿Cuál es el planeta más grande de nuestro sistema solar?',
+        type: 'multiple',
+        time_limit: 30,
         options: ['Marte', 'Júpiter', 'Saturno', 'Neptuno'],
         correct_index: 1,
         explanation: 'Júpiter es el planeta más grande del sistema solar, con una masa más de dos veces superior a la de todos los demás planetas juntos.',
         private_note: 'Recordar a los alumnos la diferencia con Saturno (anillos).'
       },
       {
-        question: '¿Qué proceso utilizan las plantas para convertir la luz solar en energía?',
-        options: ['Respiración celular', 'Fotosíntesis', 'Fermentación', 'Transpiración'],
+        question: 'El ADN humano estándar consta de 23 pares de cromosomas.',
+        type: 'boolean',
+        time_limit: 20,
+        options: ['Verdadero', 'Falso'],
+        correct_index: 0,
+        explanation: 'El genoma humano cuenta con 46 cromosomas organizados en 23 pares (22 autosómicos y 1 par sexual).',
+        private_note: 'Pregunta de concepto biológico fundamental.'
+      },
+      {
+        question: '¿En qué año llegó el ser humano por primera vez a la Luna?',
+        type: 'multiple',
+        time_limit: 30,
+        options: ['1959', '1969', '1975', '1982'],
         correct_index: 1,
-        explanation: 'La fotosíntesis permite a las plantas transformar agua y dióxido de carbono en glucosa y oxígeno utilizando la luz solar.',
-        private_note: 'Pregunta clave del bloque de biología.'
+        explanation: 'La misión Apolo 11 de la NASA alunizó el 20 de julio de 1969 con Neil Armstrong y Buzz Aldrin.',
+        private_note: 'Mencionar el módulo lunar Eagle.'
+      },
+      {
+        question: 'El río Amazonas es el río más caudaloso y largo del planeta.',
+        type: 'boolean',
+        time_limit: 20,
+        options: ['Verdadero', 'Falso'],
+        correct_index: 0,
+        explanation: 'El río Amazonas transporta aproximadamente una quinta parte del agua fluvial del mundo y supera al río Nilo en longitud y caudal.',
+        private_note: 'Destacar la importancia de la cuenca amazónica.'
+      },
+      {
+        question: 'Relaciona cada orgánulo celular con su función primordial:',
+        type: 'match',
+        time_limit: 60,
+        pairs: [
+          { left: 'Mitocondria', right: 'Producción de Energía (ATP)' },
+          { left: 'Cloroplasto', right: 'Fotosíntesis' },
+          { left: 'Núcleo', right: 'Almacena el Material Genético' },
+          { left: 'Ribosoma', right: 'Síntesis de Proteínas' }
+        ],
+        options: [
+          'Mitocondria ⟷ Producción de Energía (ATP)',
+          'Cloroplasto ⟷ Fotosíntesis',
+          'Núcleo ⟷ Almacena el Material Genético',
+          'Ribosoma ⟷ Síntesis de Proteínas'
+        ],
+        correct_index: 0,
+        explanation: 'Cada orgánulo cumple un rol especializado indispensable para la homeostasis y el metabolismo celular.',
+        private_note: 'Excelente pregunta para consolidar el bloque celular.'
       }
     ];
     renderQuestions();
@@ -783,6 +875,7 @@ try {
   var savedSess = JSON.parse(localStorage.getItem('trivia_express_active_session') || 'null');
   if(savedSess && savedSess.pin){
     activeSession = savedSess;
+    activeSession.questions = JSON.parse(JSON.stringify(questions));
     document.getElementById('pinDisplay').textContent = savedSess.pin;
     document.getElementById('gameControlsCard').style.display = 'flex';
     renderPlayers(savedSess.players || []);
@@ -806,14 +899,32 @@ try {
     setupChannel(autoPin);
     if(supabaseClient){
       supabaseClient.from('debate_state').upsert([
-        { id: 'quiz_' + autoPin, state: activeSession },
-        { id: 'quiz_active', state: activeSession }
+        { id: 'quiz_' + autoPin, state: activeSession, data: activeSession },
+        { id: 'quiz_active', state: activeSession, data: activeSession }
       ]).then(function(res){ if(!res.error) subscribeToSession(); });
     }
   }
 } catch(e){}
 
 /* BOTONES DEL BANNER DE PIN */
+var addBotsBtn = document.getElementById('addBotsBtn');
+if(addBotsBtn){
+  addBotsBtn.addEventListener('click', function(){
+    if(!activeSession) return;
+    var botNames = ['Sofía', 'Mateo', 'Valentina', 'Lucas'];
+    var players = activeSession.players || [];
+    botNames.forEach(function(name){
+      if(!players.some(function(p){ return p.name === name; })){
+        players.push({ name: name, score: 0, isBot: true });
+      }
+    });
+    activeSession.players = players;
+    saveSessionState();
+    renderPlayers(players);
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.triviaJoin();
+  });
+}
+
 var regenPinBtn = document.getElementById('regenPinBtn');
 if(regenPinBtn){
   regenPinBtn.addEventListener('click', function(){
