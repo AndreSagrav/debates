@@ -71,15 +71,11 @@
 }
 .games-trigger.open .arrow { transform: rotate(180deg); }
 
-/* Menu Overlay */
+/* Menu Overlay (Non-blocking) */
 .games-menu-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  background: transparent;
+  display: none !important;
+  pointer-events: none !important;
 }
-.games-menu-overlay.open { display: block; }
 
 /* Menu Dropdown Container */
 .games-menu {

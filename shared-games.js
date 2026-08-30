@@ -339,7 +339,6 @@ var GameEngine = (function(){
   function initMenu(){
     var trigger = document.getElementById('gamesTrigger');
     var menu = document.getElementById('gamesMenu');
-    var overlay = document.getElementById('gamesOverlay');
     var muteBtn = document.getElementById('gamesMuteBtn');
     if(!trigger || !menu) return;
 
@@ -348,20 +347,19 @@ var GameEngine = (function(){
       var isOpen = menu.classList.contains('open');
       if(isOpen){
         menu.classList.remove('open');
-        overlay.classList.remove('open');
         trigger.classList.remove('open');
       } else {
         menu.classList.add('open');
-        overlay.classList.add('open');
         trigger.classList.add('open');
         sfxClick();
       }
     });
 
-    overlay.addEventListener('click', function(){
-      menu.classList.remove('open');
-      overlay.classList.remove('open');
-      trigger.classList.remove('open');
+    document.addEventListener('click', function(e){
+      if(!menu.contains(e.target) && !trigger.contains(e.target)){
+        menu.classList.remove('open');
+        trigger.classList.remove('open');
+      }
     });
 
     if(muteBtn){
@@ -376,6 +374,9 @@ var GameEngine = (function(){
     // Escuchar clics en las tarjetas del menú para cambiar de juego en la MISMA pestaña
     menu.querySelectorAll('.game-card').forEach(function(card){
       card.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var href = card.getAttribute('href');
         var mode = 'debates';
         if(card.classList.contains('quiz')) mode = 'quiz';
         else if(card.classList.contains('jeopardy')) mode = 'jeopardy';
@@ -385,6 +386,12 @@ var GameEngine = (function(){
         else if(card.classList.contains('batalla')) mode = 'batalla';
 
         broadcastGameMode(mode);
+        menu.classList.remove('open');
+        trigger.classList.remove('open');
+
+        if(href && href !== '#' && !href.startsWith('javascript:')){
+          window.location.href = href;
+        }
       });
     });
   }

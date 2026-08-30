@@ -418,6 +418,17 @@ function startQuestion(session){
   document.getElementById('qNumText').textContent = 'Pregunta ' + (qIdx + 1);
   document.getElementById('scoreText').textContent = currentScore + ' pts';
   
+  var curQ = (session.questions && session.questions[qIdx]) ? session.questions[qIdx] : null;
+  var qType = curQ ? (curQ.type || 'multiple') : 'multiple';
+  var optBtns = document.querySelectorAll('.opt-btn');
+  optBtns.forEach(function(b, idx){
+    if(qType === 'boolean' && idx >= 2){
+      b.style.display = 'none';
+    } else {
+      b.style.display = 'flex';
+    }
+  });
+
   // Animación barra de tiempo
   var fill = document.getElementById('timerFill');
   fill.style.transition = 'none';

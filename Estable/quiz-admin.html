@@ -234,15 +234,16 @@
         <select id="qTypeSelect" style="padding:10px 12px;font-weight:700;background:var(--s2);color:var(--ink);border:1px solid var(--border);border-radius:8px;">
           <option value="multiple">🎯 Opción Múltiple (4 Opciones A, B, C, D)</option>
           <option value="boolean">⚖️ Falso / Verdadero (2 Opciones)</option>
-          <option value="open">✍️ Respuesta Corta / Abierta</option>
+          <option value="match">🧩 Pareo / Relacionar Conceptos (4 Parejas)</option>
         </select>
       </div>
 
       <div class="input-group">
-        <label>Texto de la Pregunta</label>
-        <input type="text" id="qTextInput" placeholder="Ej. ¿Cuál es el órgano principal del sistema circulatorio?" style="font-size:14px;padding:12px;"/>
+        <label>Texto de la Pregunta / Enunciado</label>
+        <input type="text" id="qTextInput" placeholder="Ej. Relaciona cada concepto o ¿Cuál es el órgano principal?" style="font-size:14px;padding:12px;"/>
       </div>
 
+      <!-- OPCIONES MÚLTIPLES / FALSO-VERDADERO -->
       <div class="opts-builder" id="optsBuilder">
         <div class="opt-item" id="optItem0"><input type="radio" name="correctOpt" value="0" checked/><input type="text" id="opt0Input" placeholder="Opción A (Rojo ▲)"/></div>
         <div class="opt-item" id="optItem1"><input type="radio" name="correctOpt" value="1"/><input type="text" id="opt1Input" placeholder="Opción B (Azul ◆)"/></div>
@@ -250,9 +251,19 @@
         <div class="opt-item" id="optItem3"><input type="radio" name="correctOpt" value="3"/><input type="text" id="opt3Input" placeholder="Opción D (Verde ■)"/></div>
       </div>
 
-      <div class="input-group" id="openAnswerGroup" style="display:none;">
-        <label style="color:#34d399;">🔑 Respuesta / Palabras Clave Aceptadas</label>
-        <input type="text" id="openAnswerInput" placeholder="Ej. Corazón, Miocardio"/>
+      <!-- PAREO / RELACIONAR CONCEPTOS -->
+      <div id="matchBuilder" style="display:none;flex-direction:column;gap:8px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#a78bfa;">🧩 Define los 4 conceptos con su pareja correspondiente:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input type="text" id="matchLeft0" placeholder="Concepto 1 (Ej. Mitocondria)"/>
+          <input type="text" id="matchRight0" placeholder="Pareja 1 (Ej. Energía celular)"/>
+          <input type="text" id="matchLeft1" placeholder="Concepto 2 (Ej. Cloroplasto)"/>
+          <input type="text" id="matchRight1" placeholder="Pareja 2 (Ej. Fotosíntesis)"/>
+          <input type="text" id="matchLeft2" placeholder="Concepto 3 (Ej. Ribosoma)"/>
+          <input type="text" id="matchRight2" placeholder="Pareja 3 (Ej. Síntesis de proteínas)"/>
+          <input type="text" id="matchLeft3" placeholder="Concepto 4 (Ej. Núcleo)"/>
+          <input type="text" id="matchRight3" placeholder="Pareja 4 (Ej. Material genético)"/>
+        </div>
       </div>
 
       <div class="input-group">
@@ -260,7 +271,7 @@
           <span>💡 NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA (Se proyecta a los alumnos)</span>
           <span style="font-size:10px;text-transform:none;opacity:0.8;">Visible en pantalla pública al revelar respuesta</span>
         </label>
-        <textarea id="qExplanationInput" rows="3" style="min-height:85px;font-size:14px;line-height:1.5;padding:12px;" placeholder="Escribe aquí la explicación teórica, justificación de la respuesta correcta o aporte de refuerzo para la clase..."></textarea>
+        <textarea id="qExplanationInput" rows="3" style="min-height:95px;max-height:250px;overflow-y:auto;font-size:14px;line-height:1.5;padding:12px;" placeholder="Escribe aquí la explicación teórica, justificación de la respuesta correcta o aporte de refuerzo para la clase..."></textarea>
       </div>
 
       <div class="input-group">
@@ -268,7 +279,7 @@
           <span>🔒 NOTAS PRIVADAS DEL TUTOR (Solo visibles para usted)</span>
           <span style="font-size:10px;text-transform:none;opacity:0.8;">Apuntes internos de seguimiento</span>
         </label>
-        <textarea id="qPrivateNoteInput" rows="3" style="min-height:85px;font-size:14px;line-height:1.5;padding:12px;" placeholder="Anotaciones pedagógicas personales, recordatorios docentes, preguntas de profundización o seguimiento..."></textarea>
+        <textarea id="qPrivateNoteInput" rows="3" style="min-height:95px;max-height:250px;overflow-y:auto;font-size:14px;line-height:1.5;padding:12px;" placeholder="Anotaciones pedagógicas personales, recordatorios docentes, preguntas de profundización o seguimiento..."></textarea>
       </div>
 
       <button class="btn-sm btn-primary" id="addQuestionBtn" style="align-self:flex-end;padding:10px 18px;font-size:13px;">+ Agregar Pregunta a la Trivia</button>
@@ -349,7 +360,7 @@ if(window.GameEngine && GameEngine.broadcastGameMode){
 /* CONTROLADOR DE MODALIDADES DE PREGUNTA */
 var qTypeSelect = document.getElementById('qTypeSelect');
 var optsBuilder = document.getElementById('optsBuilder');
-var openAnswerGroup = document.getElementById('openAnswerGroup');
+var matchBuilder = document.getElementById('matchBuilder');
 var optItem2 = document.getElementById('optItem2');
 var optItem3 = document.getElementById('optItem3');
 var opt0Input = document.getElementById('opt0Input');
@@ -360,19 +371,19 @@ if(qTypeSelect){
     var val = this.value;
     if(val === 'boolean'){
       optsBuilder.style.display = 'grid';
-      openAnswerGroup.style.display = 'none';
+      if(matchBuilder) matchBuilder.style.display = 'none';
       optItem2.style.display = 'none';
       optItem3.style.display = 'none';
       opt0Input.value = 'Verdadero';
       opt1Input.value = 'Falso';
       opt0Input.readOnly = true;
       opt1Input.readOnly = true;
-    } else if(val === 'open'){
+    } else if(val === 'match'){
       optsBuilder.style.display = 'none';
-      openAnswerGroup.style.display = 'flex';
+      if(matchBuilder) matchBuilder.style.display = 'flex';
     } else {
       optsBuilder.style.display = 'grid';
-      openAnswerGroup.style.display = 'none';
+      if(matchBuilder) matchBuilder.style.display = 'none';
       optItem2.style.display = 'flex';
       optItem3.style.display = 'flex';
       opt0Input.readOnly = false;
@@ -403,11 +414,17 @@ document.getElementById('addQuestionBtn').addEventListener('click', function(){
     var correctOpt = parseInt(document.querySelector('input[name="correctOpt"]:checked').value);
     newQ.options = ['Verdadero', 'Falso'];
     newQ.correct_index = (correctOpt === 1) ? 1 : 0;
-  } else if(qType === 'open'){
-    var openAns = document.getElementById('openAnswerInput').value.trim();
-    newQ.options = [openAns || 'Respuesta Abierta'];
+  } else if(qType === 'match'){
+    var pairs = [];
+    for(var k = 0; k < 4; k++){
+      var left = document.getElementById('matchLeft' + k) ? document.getElementById('matchLeft' + k).value.trim() : '';
+      var right = document.getElementById('matchRight' + k) ? document.getElementById('matchRight' + k).value.trim() : '';
+      if(left && right) pairs.push({ left: left, right: right });
+    }
+    if(pairs.length < 2){ alert('Ingresa al menos 2 parejas para el Pareo.'); return; }
+    newQ.pairs = pairs;
+    newQ.options = pairs.map(function(p){ return p.left + ' ⟷ ' + p.right; });
     newQ.correct_index = 0;
-    newQ.open_answer = openAns;
   } else {
     var opt0 = document.getElementById('opt0Input').value.trim();
     var opt1 = document.getElementById('opt1Input').value.trim();
@@ -428,8 +445,11 @@ document.getElementById('addQuestionBtn').addEventListener('click', function(){
     document.getElementById('opt1Input').value = '';
     document.getElementById('opt2Input').value = '';
     document.getElementById('opt3Input').value = '';
-  } else if(qType === 'open'){
-    document.getElementById('openAnswerInput').value = '';
+  } else if(qType === 'match'){
+    for(var k = 0; k < 4; k++){
+      if(document.getElementById('matchLeft' + k)) document.getElementById('matchLeft' + k).value = '';
+      if(document.getElementById('matchRight' + k)) document.getElementById('matchRight' + k).value = '';
+    }
   }
   document.getElementById('qExplanationInput').value = '';
   document.getElementById('qPrivateNoteInput').value = '';
