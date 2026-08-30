@@ -412,7 +412,9 @@ var GameEngine = (function(){
     }
     var c = getClient();
     if(c){
-      c.from('debate_state').upsert({ id: 'default', state: { activeMode: mode } }).then(function(){});
+      c.from('debate_state').upsert([
+        { id: 'active_mode', data: { activeMode: mode }, state: { activeMode: mode } }
+      ]).then(function(){});
     }
   }
 

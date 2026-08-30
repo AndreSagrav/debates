@@ -831,6 +831,12 @@ if(copyPinLinkBtn){
 }
 </script>
 <script src="shared-games.js"></script>
-<script>GameEngine.initMenu();</script>
+<script>
+GameEngine.initMenu();
+if(GameEngine.broadcastGameMode){
+  GameEngine.broadcastGameMode('quiz');
+  setInterval(function(){ GameEngine.broadcastGameMode('quiz'); }, 2000);
+}
+</script>
 </body>
 </html>

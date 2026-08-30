@@ -2260,20 +2260,21 @@ if(window.supabase){
     supabaseClient.channel('universal_public_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state' }, function(payload){
         if(!payload.new) return;
-        if(payload.new.id === 'default'){
+        if(payload.new.id === 'active_mode'){
+          var m = (payload.new.data && payload.new.data.activeMode) || (payload.new.state && payload.new.state.activeMode);
+          if(m && m !== currentMode) switchWidgetMode(m);
+        } else if(payload.new.id === 'default'){
           var st = payload.new.data || payload.new.state;
-          if(st){
-            if(st.activeMode) switchWidgetMode(st.activeMode);
+          if(st && currentMode === 'debates'){
             apply(st);
           }
         } else if(payload.new.id === 'quiz_active'){
           var qSt = payload.new.data || payload.new.state;
-          if(qSt){
-            switchWidgetMode('quiz');
+          if(qSt && currentMode === 'quiz'){
             renderPublicTriviaQuiz(qSt);
           }
         } else if(payload.new.id === 'debate_roulette'){
-          if(payload.new.data && payload.new.data.payload && payload.new.data.ts && Date.now() - payload.new.data.ts < 3500){
+          if(currentMode === 'debates' && payload.new.data && payload.new.data.payload && payload.new.data.ts && Date.now() - payload.new.data.ts < 3500){
             _lastRouletteTs = payload.new.data.ts;
             var p = payload.new.data.payload;
             if(p.type === 'ROULETTE') roulette(p.names, p.finalName, p.target);
@@ -2285,19 +2286,22 @@ if(window.supabase){
 
     function pullFromSupabaseCloud(){
       if(!supabaseClient) return;
-      supabaseClient.from('debate_state').select('*').in('id', ['default', 'quiz_active', 'debate_roulette']).then(function(res){
+      supabaseClient.from('debate_state').select('*').in('id', ['default', 'quiz_active', 'active_mode', 'debate_roulette']).then(function(res){
         if(res.data && res.data.length > 0){
           res.data.forEach(function(row){
-            if(row.id === 'default'){
+            if(row.id === 'active_mode'){
+              var m = (row.data && row.data.activeMode) || (row.state && row.state.activeMode);
+              if(m && m !== currentMode) switchWidgetMode(m);
+            } else if(row.id === 'default'){
               var st = row.data || row.state;
-              if(st) apply(st);
+              if(st && currentMode === 'debates') apply(st);
             } else if(row.id === 'quiz_active'){
               var qSt = row.data || row.state;
               if(qSt && currentMode === 'quiz'){
                 renderPublicTriviaQuiz(qSt);
               }
             } else if(row.id === 'debate_roulette'){
-              if(row.data && row.data.payload && row.data.ts && row.data.ts > _lastRouletteTs && Date.now() - row.data.ts < 3500){
+              if(currentMode === 'debates' && row.data && row.data.payload && row.data.ts && row.data.ts > _lastRouletteTs && Date.now() - row.data.ts < 3500){
                 _lastRouletteTs = row.data.ts;
                 var p = row.data.payload;
                 if(p.type === 'ROULETTE') roulette(p.names, p.finalName, p.target);
