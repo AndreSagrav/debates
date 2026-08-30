@@ -511,6 +511,7 @@ var S = {
 };
 var timerId = null, publicWin = null;
 var _lastNoteQ = null; // tracks which question is currently loaded in noteArea
+var _roundNoteWasPublished = false;
 var MAIN_Q_LIMIT = 5;
 
 function uid(){ return Math.random().toString(36).slice(2,8); }
@@ -1558,6 +1559,21 @@ function pickForRole(role){
 }
 
 document.getElementById('randABtn').addEventListener('click',function(){
+  if(_roundNoteWasPublished){
+    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
+    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
+    S.selectedB = null;
+    S.activeQ = null;
+    S.showQNote = false;
+    _roundNoteWasPublished = false;
+    _timerJustFinished = false;
+    if(timerId){ clearInterval(timerId); timerId = null; }
+    _timerTargetEndTime = null;
+    S.timer.running = false;
+    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
+    S.timer.total = S.timer.remaining;
+    updateTimerUI();
+  }
   var chosen=pickForRole('A');
   if(!chosen) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.roulette();
@@ -1578,6 +1594,21 @@ document.getElementById('randABtn').addEventListener('click',function(){
   }, 1200);
 });
 document.getElementById('randBBtn').addEventListener('click',function(){
+  if(_roundNoteWasPublished){
+    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
+    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
+    S.selectedA = null;
+    S.activeQ = null;
+    S.showQNote = false;
+    _roundNoteWasPublished = false;
+    _timerJustFinished = false;
+    if(timerId){ clearInterval(timerId); timerId = null; }
+    _timerTargetEndTime = null;
+    S.timer.running = false;
+    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
+    S.timer.total = S.timer.remaining;
+    updateTimerUI();
+  }
   var chosen=pickForRole('B');
   if(!chosen) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.roulette();
@@ -1644,12 +1675,26 @@ function renderQuestions(){
     div.querySelector('.q-btn-show').addEventListener('click',function(e){
       var id=e.currentTarget.dataset.id;
       var togglingOff = (S.activeQ===id);
+      if(_roundNoteWasPublished){
+        if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
+        if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
+        S.selectedA = null;
+        S.selectedB = null;
+        S.showQNote = false;
+        _roundNoteWasPublished = false;
+        _timerJustFinished = false;
+        if(timerId){ clearInterval(timerId); timerId = null; }
+        _timerTargetEndTime = null;
+        S.timer.running = false;
+        S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
+        S.timer.total = S.timer.remaining;
+        updateTimerUI();
+      }
       if(S.activeQ&&S.activeQ!==id){
         var prev=S.questions.find(function(q){return q.id===S.activeQ;});
         if(prev)prev.used=true;
       }
       if(togglingOff){
-        // Al ocultar la pregunta activa, marcarla como usada para que la ruleta no la repita
         var cur=S.questions.find(function(q){return q.id===id;});
         if(cur) cur.used=true;
         S.activeQ=null;
@@ -1662,8 +1707,13 @@ function renderQuestions(){
     });
     div.querySelector('.q-btn-note').addEventListener('click',function(e){
       var id=e.currentTarget.dataset.id;
-      if(S.activeQ!==id){S.activeQ=id;S.showQNote=true;}
-      else{S.showQNote=!S.showQNote;}
+      if(S.activeQ!==id){
+        S.activeQ=id;
+        S.showQNote=true;
+      } else {
+        S.showQNote=!S.showQNote;
+      }
+      if(S.showQNote) _roundNoteWasPublished = true;
       renderQuestions();broadcast();
     });
     div.querySelector('.p-rm').addEventListener('click',function(e){
@@ -1715,6 +1765,21 @@ document.getElementById('newQInput').addEventListener('keydown',function(e){
   if(e.key==='Enter') document.getElementById('addQBtn').click();
 });
 document.getElementById('randQBtn').addEventListener('click',function(){
+  if(_roundNoteWasPublished){
+    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
+    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
+    S.selectedA = null;
+    S.selectedB = null;
+    S.showQNote = false;
+    _roundNoteWasPublished = false;
+    _timerJustFinished = false;
+    if(timerId){ clearInterval(timerId); timerId = null; }
+    _timerTargetEndTime = null;
+    S.timer.running = false;
+    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
+    S.timer.total = S.timer.remaining;
+    updateTimerUI();
+  }
   // Pool: ALL main (non-reinforcement) questions — independent cycle from reinf
   var mainQs=S.questions.filter(function(q){return !q.reinforcement;});
   if(!mainQs.length) return;
@@ -1743,6 +1808,21 @@ document.getElementById('randQBtn').addEventListener('click',function(){
 });
 
 document.getElementById('randReinfBtn').addEventListener('click',function(){
+  if(_roundNoteWasPublished){
+    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
+    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
+    S.selectedA = null;
+    S.selectedB = null;
+    S.showQNote = false;
+    _roundNoteWasPublished = false;
+    _timerJustFinished = false;
+    if(timerId){ clearInterval(timerId); timerId = null; }
+    _timerTargetEndTime = null;
+    S.timer.running = false;
+    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
+    S.timer.total = S.timer.remaining;
+    updateTimerUI();
+  }
   // Pool: ONLY reinforcement questions — independent cycle from main
   var reinfQs=S.questions.filter(function(q){return q.reinforcement;});
   if(!reinfQs.length) return;
