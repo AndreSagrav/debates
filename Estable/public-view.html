@@ -2347,9 +2347,19 @@ function pullFromStorage(){
   }catch(e){}
   try{
     var qRaw = localStorage.getItem('trivia_express_active_session');
+    if(!qRaw){
+      var lp = localStorage.getItem('quiz_latest_pin');
+      if(lp) qRaw = localStorage.getItem('quiz_game_' + lp);
+    }
     if(qRaw){
       var qSess = JSON.parse(qRaw);
       if(qSess) renderPublicTriviaQuiz(qSess);
+    } else {
+      var lp2 = localStorage.getItem('quiz_latest_pin');
+      var pinEl = document.getElementById('quizPubPin');
+      if(lp2 && pinEl && (pinEl.textContent === '----' || !pinEl.textContent)){
+        pinEl.textContent = lp2;
+      }
     }
   }catch(e){}
   return false;

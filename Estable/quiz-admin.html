@@ -841,9 +841,25 @@ var opBtn = document.getElementById('openPublicBtn');
 if(opBtn){
   opBtn.addEventListener('click', function(){
     if(window.GameEngine && GameEngine.broadcastGameMode) GameEngine.broadcastGameMode('quiz');
+    saveSessionState();
     window.open('public-view.html', 'shared_public_window', 'width=1280,height=720');
   });
 }
+
+window.addEventListener('message', function(e){
+  if(e.data && e.data.type === 'PUBLIC_READY'){
+    saveSessionState();
+  }
+});
+if(window.BroadcastChannel){
+  var uChanPub = new BroadcastChannel('universal_public_channel');
+  uChanPub.onmessage = function(e){
+    if(e.data && e.data.type === 'PUBLIC_READY'){
+      saveSessionState();
+    }
+  };
+}
+setInterval(saveSessionState, 1500);
 </script>
 <script src="shared-games.js"></script>
 <script>
