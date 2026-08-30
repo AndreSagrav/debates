@@ -211,6 +211,7 @@
     <button id="adminSoundBtn" class="btn-sm" title="Sonido activado (Clic para silenciar)">🔊 Sonido</button>
     <button id="sessionResetBtn" class="btn-sm">↺ Resetear sesión</button>
     <button id="newSessionBtn" class="btn-sm" style="background:#1e293b;border:1px solid #d97706;color:#fbbf24;">📦 Nueva sesión</button>
+    <button id="openPublicBtn" class="btn-sm" style="background:#2563eb;border:1px solid #3b82f6;color:#ffffff;font-weight:700;">↗ Abrir Vista Pública</button>
   </div>
 </header>
 
@@ -234,13 +235,26 @@
     <div class="card">
       <div class="card-title">📝 Creador de Preguntas — Trivia Express</div>
       
-      <div class="input-group">
-        <label>Modalidad de la Pregunta</label>
-        <select id="qTypeSelect" style="padding:10px 12px;font-weight:700;background:var(--s2);color:var(--ink);border:1px solid var(--border);border-radius:8px;">
-          <option value="multiple">🎯 Opción Múltiple (4 Opciones A, B, C, D)</option>
-          <option value="boolean">⚖️ Falso / Verdadero (2 Opciones)</option>
-          <option value="match">🧩 Pareo / Relacionar Conceptos (4 Parejas)</option>
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="input-group">
+          <label>Modalidad de la Pregunta</label>
+          <select id="qTypeSelect" style="padding:10px 12px;font-weight:700;background:var(--s2);color:var(--ink);border:1px solid var(--border);border-radius:8px;">
+            <option value="multiple">🎯 Opción Múltiple (4 Opciones A, B, C, D)</option>
+            <option value="boolean">⚖️ Falso / Verdadero (2 Opciones)</option>
+            <option value="match">🧩 Pareo / Relacionar Conceptos (4 Parejas)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>⏱️ Límite de Tiempo</label>
+          <select id="qTimeSelect" style="padding:10px 12px;font-weight:700;background:var(--s2);color:var(--ink);border:1px solid var(--border);border-radius:8px;">
+            <option value="10">10 segundos</option>
+            <option value="20">20 segundos</option>
+            <option value="30" selected>30 segundos (Estándar)</option>
+            <option value="60">60 segundos (1 minuto)</option>
+            <option value="90">90 segundos</option>
+            <option value="120">120 segundos (2 minutos)</option>
+          </select>
+        </div>
       </div>
 
       <div class="input-group">
@@ -402,6 +416,7 @@ if(qTypeSelect){
 /* AGREGAR PREGUNTA */
 document.getElementById('addQuestionBtn').addEventListener('click', function(){
   var qType = qTypeSelect ? qTypeSelect.value : 'multiple';
+  var qTime = parseInt(document.getElementById('qTimeSelect').value || '30');
   var qText = document.getElementById('qTextInput').value.trim();
   var explanation = document.getElementById('qExplanationInput').value.trim();
   var privateNote = document.getElementById('qPrivateNoteInput').value.trim();
@@ -410,6 +425,7 @@ document.getElementById('addQuestionBtn').addEventListener('click', function(){
 
   var newQ = {
     type: qType,
+    time_limit: qTime,
     question: qText,
     explanation: explanation || '',
     private_note: privateNote || ''
@@ -471,12 +487,14 @@ function renderQuestions(){
     var div = document.createElement('div');
     div.style.cssText = 'background:var(--s2);padding:12px;border-radius:10px;font-size:13px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--border);';
     
+    var timeBadge = '<span style="background:#1e293b;border:1px solid #3b82f6;color:#60a5fa;border-radius:6px;padding:2px 6px;font-size:10px;margin-left:6px;font-weight:700;">⏱️ ' + (q.time_limit || 30) + 's</span>';
+    var typeBadge = '<span style="background:#1e293b;border:1px solid #a855f7;color:#c084fc;border-radius:6px;padding:2px 6px;font-size:10px;margin-left:4px;font-weight:700;">' + (q.type === 'boolean' ? '⚖️ V/F' : (q.type === 'match' ? '🧩 Pareo' : '🎯 Múltiple')) + '</span>';
     var expBadge = q.explanation ? '<div style="font-size:11px;color:#60a5fa;">💡 Nota pública: ' + q.explanation + '</div>' : '';
     var privBadge = q.private_note ? '<div style="font-size:11px;color:var(--ink-dim);">🔒 Nota privada: ' + q.private_note + '</div>' : '';
 
     div.innerHTML = 
       '<div style="display:flex;justify-content:space-between;align-items:center;">'
-      + '<span><strong>#'+(i+1)+'</strong> '+q.question+'</span>'
+      + '<span><strong>#'+(i+1)+'</strong> '+q.question + timeBadge + typeBadge + '</span>'
       + '<button class="btn-sm" style="color:var(--red);" data-idx="'+i+'">&times;</button>'
       + '</div>' + expBadge + privBadge;
 
@@ -819,20 +837,11 @@ if(regenPinBtn){
   });
 }
 
-var copyPinLinkBtn = document.getElementById('copyPinLinkBtn');
-if(copyPinLinkBtn){
-  copyPinLinkBtn.addEventListener('click', function(){
-    if(!activeSession || !activeSession.pin) return;
-    var url = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) + 'play.html?pin=' + activeSession.pin;
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(url).then(function(){
-        alert('✓ Enlace directo para los alumnos copiado:\n' + url);
-      }).catch(function(){
-        prompt('Copia este enlace para tus alumnos:', url);
-      });
-    } else {
-      prompt('Copia este enlace para tus alumnos:', url);
-    }
+var opBtn = document.getElementById('openPublicBtn');
+if(opBtn){
+  opBtn.addEventListener('click', function(){
+    if(window.GameEngine && GameEngine.broadcastGameMode) GameEngine.broadcastGameMode('quiz');
+    window.open('public-view.html', 'shared_public_window', 'width=1280,height=720');
   });
 }
 </script>

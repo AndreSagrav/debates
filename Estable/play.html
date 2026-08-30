@@ -447,12 +447,14 @@ function startQuestion(session){
     }
   });
 
+  var timeLimit = (curQ && curQ.time_limit) ? curQ.time_limit : 30;
+
   // Animación barra de tiempo
   var fill = document.getElementById('timerFill');
   fill.style.transition = 'none';
   fill.style.width = '100%';
   setTimeout(function(){
-    fill.style.transition = 'width 20s linear';
+    fill.style.transition = 'width ' + timeLimit + 's linear';
     fill.style.width = '0%';
   }, 50);
 

@@ -789,6 +789,89 @@
     line-height: 1.4;
   }
 
+  /* LIVE SCOREBOARD & QUESTION TIMER */
+  .pub-timer-container {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .pub-timer-track {
+    flex: 1;
+    height: 14px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .pub-timer-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+    border-radius: 999px;
+    transition: width linear;
+  }
+  .pub-timer-digits {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fbbf24;
+    min-width: 45px;
+    text-align: right;
+  }
+
+  /* SCOREBOARD CARD */
+  .pub-scoreboard-card {
+    background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95));
+    border: 2px solid #a855f7;
+    border-radius: 18px;
+    padding: 16px 24px;
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(168,85,247,0.3);
+    animation: fadeIn .3s ease;
+  }
+  .pub-sb-header {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #c084fc;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+  }
+  .pub-sb-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .pub-sb-item {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+  .pub-sb-rank {
+    font-weight: 800;
+    color: #fbbf24;
+    margin-right: 6px;
+  }
+  .pub-sb-pts {
+    font-family: 'DM Mono', monospace;
+    font-weight: 700;
+    color: #34d399;
+  }
+
   /* ═══════════════════════════════════════════════════════════
      OTHER MINI-GAMES FRAMES
      ═══════════════════════════════════════════════════════════ */
@@ -1298,6 +1381,13 @@
 
       <!-- QUESTION & RESULTS VIEW -->
       <div class="trivia-q-box" id="quizPubQuestionBox" style="display:none;">
+        <div class="pub-timer-container" id="pubTimerContainer">
+          <div class="pub-timer-track">
+            <div class="pub-timer-fill" id="pubQuizTimerFill"></div>
+          </div>
+          <div class="pub-timer-digits" id="pubQuizTimerDigits">30s</div>
+        </div>
+
         <div class="trivia-q-header" id="quizPubQText">Pregunta</div>
         <div class="trivia-opts-grid" id="quizPubOptsGrid">
           <div class="trivia-opt-card opt-a" id="pubOpt0"><span>▲ A:</span><span class="opt-label" id="pubOpt0Txt">Opción A</span></div>
@@ -1305,10 +1395,20 @@
           <div class="trivia-opt-card opt-c" id="pubOpt2"><span>● C:</span><span class="opt-label" id="pubOpt2Txt">Opción C</span></div>
           <div class="trivia-opt-card opt-d" id="pubOpt3"><span>■ D:</span><span class="opt-label" id="pubOpt3Txt">Opción D</span></div>
         </div>
+
         <!-- NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA -->
         <div class="pub-quiz-exp-card" id="pubQuizExpCard" style="display:none;">
           <div class="pq-exp-header">💡 NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA</div>
           <div class="pq-exp-body" id="pubQuizExpText">—</div>
+        </div>
+
+        <!-- TABLA DE POSICIONES EN VIVO (SCOREBOARD TRAS CADA PREGUNTA) -->
+        <div class="pub-scoreboard-card" id="pubQuizScoreboard" style="display:none;">
+          <div class="pub-sb-header">
+            <span>📊 TABLA DE POSICIONES EN VIVO</span>
+            <span>Ronda Actual</span>
+          </div>
+          <div class="pub-sb-list" id="pubQuizSbList"></div>
         </div>
       </div>
 
@@ -2019,6 +2119,8 @@ function qRoulette(questions, finalQ){
    EVENT LISTENERS & MULTI-CHANNEL RECEIVERS
    ═══════════════════════════════════════════════════════════ */
 
+var _triviaTimerInterval = null;
+
 function renderPublicTriviaQuiz(s){
   if(!s) return;
   if(currentMode !== 'quiz') switchWidgetMode('quiz');
@@ -2030,6 +2132,11 @@ function renderPublicTriviaQuiz(s){
   var qText = document.getElementById('quizPubQText');
   var expCard = document.getElementById('pubQuizExpCard');
   var expText = document.getElementById('pubQuizExpText');
+  var sbCard = document.getElementById('pubQuizScoreboard');
+  var sbList = document.getElementById('pubQuizSbList');
+  var timerContainer = document.getElementById('pubTimerContainer');
+  var timerFill = document.getElementById('pubQuizTimerFill');
+  var timerDigits = document.getElementById('pubQuizTimerDigits');
 
   if(pinEl && s.pin) pinEl.textContent = s.pin;
   if(plCount && s.players) plCount.textContent = s.players.length + ' Jugadores conectados';
@@ -2038,6 +2145,7 @@ function renderPublicTriviaQuiz(s){
     if(lobby) lobby.style.display = 'flex';
     if(qBox) qBox.style.display = 'none';
     if(podBox) podBox.style.display = 'none';
+    if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
   } else if(s.status === 'question' || s.status === 'results'){
     if(lobby) lobby.style.display = 'none';
     if(qBox) qBox.style.display = 'flex';
@@ -2047,6 +2155,7 @@ function renderPublicTriviaQuiz(s){
     if(curQ){
       if(qText) qText.textContent = (s.current_question + 1) + '. ' + curQ.question;
       var qType = curQ.type || 'multiple';
+      var timeLimit = curQ.time_limit || 30;
 
       for(var i = 0; i < 4; i++){
         var optTxtEl = document.getElementById('pubOpt' + i + 'Txt');
@@ -2054,7 +2163,7 @@ function renderPublicTriviaQuiz(s){
         if(optCardEl){
           if(qType === 'boolean' && i >= 2){
             optCardEl.style.display = 'none';
-          } else if(qType === 'open' && i >= 1){
+          } else if(curQ.options && i >= curQ.options.length){
             optCardEl.style.display = 'none';
           } else {
             optCardEl.style.display = 'flex';
@@ -2067,15 +2176,59 @@ function renderPublicTriviaQuiz(s){
         }
       }
 
-      // Mostrar Nota Pública / Explicación Pedagógica
-      if(s.status === 'results' && s.show_explanation && curQ.explanation){
-        if(expText) expText.textContent = curQ.explanation;
-        if(expCard) expCard.style.display = 'flex';
-      } else {
+      if(s.status === 'question'){
+        if(timerContainer) timerContainer.style.display = 'flex';
         if(expCard) expCard.style.display = 'none';
+        if(sbCard) sbCard.style.display = 'none';
+
+        // Temporizador activo
+        if(!_triviaTimerInterval && s.question_start){
+          var startMs = new Date(s.question_start).getTime();
+          _triviaTimerInterval = setInterval(function(){
+            var elapsed = Math.max(0, (Date.now() - startMs) / 1000);
+            var remaining = Math.max(0, timeLimit - elapsed);
+            var pct = (remaining / timeLimit) * 100;
+            if(timerFill) timerFill.style.width = pct + '%';
+            if(timerDigits) timerDigits.textContent = Math.ceil(remaining) + 's';
+            if(remaining <= 0){
+              clearInterval(_triviaTimerInterval);
+              _triviaTimerInterval = null;
+            }
+          }, 100);
+        }
+      } else if(s.status === 'results'){
+        if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
+        if(timerContainer) timerContainer.style.display = 'none';
+
+        // Mostrar Nota Pública / Explicación Pedagógica
+        if(s.show_explanation && curQ.explanation){
+          if(expText) expText.textContent = curQ.explanation;
+          if(expCard) expCard.style.display = 'flex';
+        } else {
+          if(expCard) expCard.style.display = 'none';
+        }
+
+        // Mostrar Tabla de Posiciones de la Ronda (Scoreboard)
+        if(s.players && s.players.length > 0){
+          var sorted = s.players.slice().sort(function(a,b){ return (b.score||0) - (a.score||0); });
+          if(sbList){
+            sbList.innerHTML = '';
+            sorted.slice(0, 6).forEach(function(pl, idx){
+              var item = document.createElement('div');
+              item.className = 'pub-sb-item';
+              var medal = idx === 0 ? '🥇 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : '#' + (idx + 1) + ' '));
+              item.innerHTML = '<span><span class="pub-sb-rank">' + medal + '</span><strong>' + pl.name + '</strong></span><span class="pub-sb-pts">' + (pl.score || 0) + ' pts</span>';
+              sbList.appendChild(item);
+            });
+          }
+          if(sbCard) sbCard.style.display = 'flex';
+        } else {
+          if(sbCard) sbCard.style.display = 'none';
+        }
       }
     }
   } else if(s.status === 'finished'){
+    if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
     if(lobby) lobby.style.display = 'none';
     if(qBox) qBox.style.display = 'none';
     if(podBox) podBox.style.display = 'flex';
