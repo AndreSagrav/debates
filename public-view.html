@@ -1520,6 +1520,7 @@ if(arc){
 var pA = null, pB = null, pQ = null;
 var rouletteRunningA = false, rouletteRunningB = false, qRouletteRunning = false;
 var currentMode = 'debates';
+var _lockedMode = null; // Si se fuerza modo por URL, no permitir que el polling lo cambie
 
 var modeTitles = {
   debates: '🎤 Debates / Repaso',
@@ -1533,6 +1534,7 @@ var modeTitles = {
 
 function switchWidgetMode(mode){
   if(!mode || !modeTitles[mode]) return;
+  if(_lockedMode && mode !== _lockedMode) return; // Bloquear cambios si modo está forzado por URL
   if(currentMode === mode){
     // Asegurar que el frame correcto tenga .active
     var curFrame = document.getElementById('frame-' + mode);
@@ -2415,7 +2417,9 @@ function pullAll(){
 (function(){
   var params = new URLSearchParams(window.location.search);
   var forceMode = params.get('mode');
-  if(forceMode){
+  if(forceMode && modeTitles[forceMode]){
+    _lockedMode = forceMode;
+    currentMode = 'x'; // forzar re-render
     switchWidgetMode(forceMode);
     localStorage.setItem('active_game_mode', forceMode);
   }
