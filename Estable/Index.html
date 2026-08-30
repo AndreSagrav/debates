@@ -1126,16 +1126,19 @@ if(window.BroadcastChannel){
   };
 }
 
-document.getElementById('openPublicBtn').addEventListener('click',function(){
-  if(publicWin&&!publicWin.closed){
-    publicWin.focus();
-    publicWin.postMessage(getMsg(),'*');
-    writeStateBus();
-    return;
-  }
-  publicWin = window.open('public-view.html','shared_public_window','width=1280,height=720');
-  setTimeout(function(){ writeStateBus(); }, 300);
-});
+var opBtn = document.getElementById('openPublicBtn');
+if(opBtn){
+  opBtn.addEventListener('click',function(){
+    if(publicWin&&!publicWin.closed){
+      publicWin.focus();
+      publicWin.postMessage(getMsg(),'*');
+      writeStateBus();
+      return;
+    }
+    publicWin = window.open('public-view.html','shared_public_window','width=1280,height=720');
+    setTimeout(function(){ writeStateBus(); }, 300);
+  });
+}
 
 /* Nueva sesión — archiva participantes, borra preguntas y notas */
 document.getElementById('newSessionBtn').addEventListener('click',function(){
