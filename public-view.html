@@ -2411,6 +2411,16 @@ function pullAll(){
   if(!ok) requestState();
 }
 
+// Detectar ?mode=quiz en la URL para forzar modo Quiz de inmediato
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var forceMode = params.get('mode');
+  if(forceMode){
+    switchWidgetMode(forceMode);
+    localStorage.setItem('active_game_mode', forceMode);
+  }
+})();
+
 setInterval(pullAll, 250);
 pullAll();
 requestState();
