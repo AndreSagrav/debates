@@ -1424,6 +1424,21 @@ function renderParticipants(){
     div.querySelectorAll('.sel-btn').forEach(function(btn){
       btn.addEventListener('click',function(e){
         var id=e.currentTarget.dataset.id,col=e.currentTarget.dataset.col;
+        if(_roundNoteWasPublished){
+          if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
+          if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
+          if(col==='a'){ S.selectedB = null; } else { S.selectedA = null; }
+          S.activeQ = null;
+          S.showQNote = false;
+          _roundNoteWasPublished = false;
+          _timerJustFinished = false;
+          if(timerId){ clearInterval(timerId); timerId = null; }
+          _timerTargetEndTime = null;
+          S.timer.running = false;
+          S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
+          S.timer.total = S.timer.remaining;
+          updateTimerUI();
+        }
         if(col==='a'){S.selectedA=S.selectedA===id?null:id;if(S.selectedA&&S.selectedB===id)S.selectedB=null;}
         else{S.selectedB=S.selectedB===id?null:id;if(S.selectedB&&S.selectedA===id)S.selectedA=null;}
         renderParticipants();broadcast();
@@ -1665,12 +1680,16 @@ function renderQuestions(){
       if(x){x.text=e.target.value;broadcast();}
     });
     nta.addEventListener('input',function(e){
+      _roundNoteWasPublished = true;
       var x=S.questions.find(function(x){return x.id===e.target.dataset.id;});
       if(x){
         x.note=e.target.value;
         div.classList.toggle('has-note',!!(x.note&&x.note.trim()));
         broadcast();
       }
+    });
+    nta.addEventListener('focus',function(){
+      _roundNoteWasPublished = true;
     });
     div.querySelector('.q-btn-show').addEventListener('click',function(e){
       var id=e.currentTarget.dataset.id;
@@ -1853,6 +1872,7 @@ document.getElementById('randReinfBtn').addEventListener('click',function(){
 /* Notas dinámicas privadas — se guardan por pregunta, nunca se envían al público */
 var noteArea = document.getElementById('noteArea');
 noteArea.addEventListener('input', function(){
+  _roundNoteWasPublished = true;
   if(S.activeQ){
     // Save under the active question ID
     S.questionNotes[S.activeQ] = noteArea.value;
@@ -1861,6 +1881,9 @@ noteArea.addEventListener('input', function(){
     S.generalNotes = noteArea.value;
   }
   persist();
+});
+noteArea.addEventListener('focus', function(){
+  _roundNoteWasPublished = true;
 });
 
 /* Carga inicial desde localStorage */
