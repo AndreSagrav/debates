@@ -1483,6 +1483,45 @@ function renderQuestion(text){
   }
 }
 
+// ── Estado de finalización y limpieza automática de ronda en Vista Pública ──
+var _publicRoundNotePublished = false;
+var _publishedNoteQId = null;
+var _publishedNameA = null;
+var _publishedNameB = null;
+
+function clearPublicViewForNewRound(){
+  // 1. Limpiar notas públicas de la ronda anterior
+  var qnRow = document.getElementById('qNoteRow');
+  var qnEl = document.getElementById('pubQNote');
+  var nEl = document.getElementById('pubNotes');
+  if(qnRow) qnRow.classList.remove('show');
+  if(qnEl) qnEl.textContent = '';
+  if(nEl){ nEl.textContent = '—'; nEl.classList.add('dim'); }
+
+  // 2. Limpiar participantes a estado neutral "Esperando…"
+  var nA = document.getElementById('nameA');
+  var nB = document.getElementById('nameB');
+  if(nA){ nA.textContent = 'Esperando…'; nA.classList.add('empty'); nA.classList.remove('roulette', 'slot-land', 'slot-spin', 'name-pop'); }
+  if(nB){ nB.textContent = 'Esperando…'; nB.classList.add('empty'); nB.classList.remove('roulette', 'slot-land', 'slot-spin', 'name-pop'); }
+  pA = null;
+  pB = null;
+
+  // 3. Limpiar pregunta anterior a "Esperando pregunta…"
+  var qEl = document.getElementById('pubQuestion');
+  if(qEl){ qEl.innerHTML = '<span class="q-empty">Esperando pregunta…</span>'; }
+  pQ = null;
+
+  // 4. Quitar overlay de "¡FINALIZADO!"
+  var fin = document.getElementById('finOverlay');
+  if(fin) fin.classList.remove('show');
+
+  // 5. Restablecer barras de turno
+  var nameAProg = document.getElementById('nameAProgress');
+  var nameBProg = document.getElementById('nameBProgress');
+  if(nameAProg) nameAProg.classList.remove('active', 'animating');
+  if(nameBProg) nameBProg.classList.remove('active', 'animating', 'b-active');
+}
+
 function apply(d){
   if(!d) return;
 
@@ -1512,6 +1551,29 @@ function apply(d){
     } else {
       resolvedQ = d.activeQ;
     }
+  }
+
+  // Detección de paso final (publicación de nota pública) vs inicio de nueva ronda
+  var hasNoteContent = (d.activeQNote && d.activeQNote.trim() && (d.showQNote || d.showQNote === undefined)) || (d.notes && d.notes.trim()) || (d.generalNotes && d.generalNotes.trim());
+  
+  if(_publicRoundNotePublished){
+    var isNewQuestion = resolvedQ && resolvedQ !== _publishedNoteQId;
+    var isNewA = resolvedNameA && resolvedNameA !== _publishedNameA;
+    var isNewB = resolvedNameB && resolvedNameB !== _publishedNameB;
+    var noteWasDismissed = (d.showQNote === false && !d.notes && !d.generalNotes);
+    var isTimerRestarted = (d.timerRunning && !d.hasFinished);
+
+    if(isNewQuestion || isNewA || isNewB || noteWasDismissed || isTimerRestarted){
+      _publicRoundNotePublished = false;
+      clearPublicViewForNewRound();
+    }
+  }
+
+  if(hasNoteContent && d.showQNote !== false){
+    _publicRoundNotePublished = true;
+    _publishedNoteQId = resolvedQ || d.activeQ;
+    _publishedNameA = resolvedNameA;
+    _publishedNameB = resolvedNameB;
   }
 
   // 1. Pregunta Activa
@@ -1590,6 +1652,11 @@ function apply(d){
 
 // Animación de Ruleta de Nombres (Opción 1: Giro Central Espectacular con Aterrizaje)
 function roulette(names, finalName, target){
+  if(_publicRoundNotePublished){
+    _publicRoundNotePublished = false;
+    clearPublicViewForNewRound();
+  }
+
   var isA = target === 'A';
   if(isA) rouletteRunningA = true; else rouletteRunningB = true;
 
@@ -1682,6 +1749,11 @@ function roulette(names, finalName, target){
 
 // Animación de Ruleta de Preguntas (Opción 1: Giro Central Espectacular con Aterrizaje hacia la Banda Superior)
 function qRoulette(questions, finalQ){
+  if(_publicRoundNotePublished){
+    _publicRoundNotePublished = false;
+    clearPublicViewForNewRound();
+  }
+
   qRouletteRunning = true;
 
   var overlay = document.getElementById('centerRouletteOverlay');
