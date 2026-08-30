@@ -2007,6 +2007,7 @@ function qRoulette(questions, finalQ){
 
 function renderPublicTriviaQuiz(s){
   if(!s) return;
+  if(currentMode !== 'quiz') switchWidgetMode('quiz');
   var lobby = document.getElementById('quizPubLobby');
   var qBox = document.getElementById('quizPubQuestionBox');
   var podBox = document.getElementById('quizPubPodiumBox');
@@ -2031,11 +2032,20 @@ function renderPublicTriviaQuiz(s){
     var curQ = (s.questions && s.questions[s.current_question]) ? s.questions[s.current_question] : null;
     if(curQ){
       if(qText) qText.textContent = (s.current_question + 1) + '. ' + curQ.question;
+      var qType = curQ.type || 'multiple';
+
       for(var i = 0; i < 4; i++){
         var optTxtEl = document.getElementById('pubOpt' + i + 'Txt');
         var optCardEl = document.getElementById('pubOpt' + i);
-        if(optTxtEl && curQ.options) optTxtEl.textContent = curQ.options[i] || '—';
         if(optCardEl){
+          if(qType === 'boolean' && i >= 2){
+            optCardEl.style.display = 'none';
+          } else if(qType === 'open' && i >= 1){
+            optCardEl.style.display = 'none';
+          } else {
+            optCardEl.style.display = 'flex';
+          }
+          if(optTxtEl && curQ.options) optTxtEl.textContent = curQ.options[i] || '—';
           optCardEl.classList.remove('correct-highlight');
           if(s.status === 'results' && curQ.correct_index === i){
             optCardEl.classList.add('correct-highlight');
@@ -2100,6 +2110,9 @@ if(window.BroadcastChannel){
 
 // 3. LocalStorage Event Listener
 window.addEventListener('storage', function(e){
+  if(e.key === 'active_game_mode' && e.newValue){
+    switchWidgetMode(e.newValue);
+  }
   if(e.key === 'debate_pub_state' && e.newValue){
     try {
       var p = JSON.parse(e.newValue);
@@ -2152,6 +2165,12 @@ function pullFromOpener(){
 
 function pullFromStorage(){
   pullRouletteFromStorage();
+  try{
+    var m = localStorage.getItem('active_game_mode');
+    if(m && m !== currentMode){
+      switchWidgetMode(m);
+    }
+  }catch(e){}
   try{
     var raw = localStorage.getItem('debate_pub_state');
     if(raw){

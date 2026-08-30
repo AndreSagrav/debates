@@ -1955,6 +1955,9 @@ initSupabase();
 <script src="shared-games.js"></script>
 <script>
 GameEngine.initMenu();
+if(GameEngine.broadcastGameMode){
+  GameEngine.broadcastGameMode('debates');
+}
 (function initAdminSoundControl(){
   var sndBtn = document.getElementById('adminSoundBtn');
   if(sndBtn && window.GameEngine){

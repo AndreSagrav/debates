@@ -228,25 +228,50 @@
     <!-- 2. EDITOR DE PREGUNTAS CON NOTAS PÚBLICAS Y PRIVADAS -->
     <div class="card">
       <div class="card-title">📝 Creador de Preguntas — Trivia Express</div>
+      
+      <div class="input-group">
+        <label>Modalidad de la Pregunta</label>
+        <select id="qTypeSelect" style="padding:10px 12px;font-weight:700;background:var(--s2);color:var(--ink);border:1px solid var(--border);border-radius:8px;">
+          <option value="multiple">🎯 Opción Múltiple (4 Opciones A, B, C, D)</option>
+          <option value="boolean">⚖️ Falso / Verdadero (2 Opciones)</option>
+          <option value="open">✍️ Respuesta Corta / Abierta</option>
+        </select>
+      </div>
+
       <div class="input-group">
         <label>Texto de la Pregunta</label>
-        <input type="text" id="qTextInput" placeholder="Ej. ¿Cuál es el órgano principal del sistema circulatorio?"/>
+        <input type="text" id="qTextInput" placeholder="Ej. ¿Cuál es el órgano principal del sistema circulatorio?" style="font-size:14px;padding:12px;"/>
       </div>
-      <div class="opts-builder">
-        <div class="opt-item"><input type="radio" name="correctOpt" value="0" checked/><input type="text" id="opt0Input" placeholder="Opción A (Rojo ▲)"/></div>
-        <div class="opt-item"><input type="radio" name="correctOpt" value="1"/><input type="text" id="opt1Input" placeholder="Opción B (Azul ◆)"/></div>
-        <div class="opt-item"><input type="radio" name="correctOpt" value="2"/><input type="text" id="opt2Input" placeholder="Opción C (Amarillo ●)"/></div>
-        <div class="opt-item"><input type="radio" name="correctOpt" value="3"/><input type="text" id="opt3Input" placeholder="Opción D (Verde ■)"/></div>
+
+      <div class="opts-builder" id="optsBuilder">
+        <div class="opt-item" id="optItem0"><input type="radio" name="correctOpt" value="0" checked/><input type="text" id="opt0Input" placeholder="Opción A (Rojo ▲)"/></div>
+        <div class="opt-item" id="optItem1"><input type="radio" name="correctOpt" value="1"/><input type="text" id="opt1Input" placeholder="Opción B (Azul ◆)"/></div>
+        <div class="opt-item" id="optItem2"><input type="radio" name="correctOpt" value="2"/><input type="text" id="opt2Input" placeholder="Opción C (Amarillo ●)"/></div>
+        <div class="opt-item" id="optItem3"><input type="radio" name="correctOpt" value="3"/><input type="text" id="opt3Input" placeholder="Opción D (Verde ■)"/></div>
       </div>
+
+      <div class="input-group" id="openAnswerGroup" style="display:none;">
+        <label style="color:#34d399;">🔑 Respuesta / Palabras Clave Aceptadas</label>
+        <input type="text" id="openAnswerInput" placeholder="Ej. Corazón, Miocardio"/>
+      </div>
+
       <div class="input-group">
-        <label style="color:#60a5fa;">💡 Nota Pública / Explicación Pedagógica (Se proyecta a los alumnos)</label>
-        <textarea id="qExplanationInput" rows="2" placeholder="Explica por qué es la respuesta correcta o agrega un dato de refuerzo para la clase..."></textarea>
+        <label style="color:#60a5fa;display:flex;justify-content:space-between;">
+          <span>💡 NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA (Se proyecta a los alumnos)</span>
+          <span style="font-size:10px;text-transform:none;opacity:0.8;">Visible en pantalla pública al revelar respuesta</span>
+        </label>
+        <textarea id="qExplanationInput" rows="3" style="min-height:85px;font-size:14px;line-height:1.5;padding:12px;" placeholder="Escribe aquí la explicación teórica, justificación de la respuesta correcta o aporte de refuerzo para la clase..."></textarea>
       </div>
+
       <div class="input-group">
-        <label style="color:var(--ink-dim);">🔒 Notas Privadas del Tutor (Solo visibles para usted)</label>
-        <textarea id="qPrivateNoteInput" rows="2" placeholder="Notas internas o apuntes de seguimiento pedagógico personal..."></textarea>
+        <label style="color:#94a3b8;display:flex;justify-content:space-between;">
+          <span>🔒 NOTAS PRIVADAS DEL TUTOR (Solo visibles para usted)</span>
+          <span style="font-size:10px;text-transform:none;opacity:0.8;">Apuntes internos de seguimiento</span>
+        </label>
+        <textarea id="qPrivateNoteInput" rows="3" style="min-height:85px;font-size:14px;line-height:1.5;padding:12px;" placeholder="Anotaciones pedagógicas personales, recordatorios docentes, preguntas de profundización o seguimiento..."></textarea>
       </div>
-      <button class="btn-sm btn-primary" id="addQuestionBtn" style="align-self:flex-end;">+ Agregar Pregunta a la Trivia</button>
+
+      <button class="btn-sm btn-primary" id="addQuestionBtn" style="align-self:flex-end;padding:10px 18px;font-size:13px;">+ Agregar Pregunta a la Trivia</button>
     </div>
 
     <!-- 3. LISTA DE PREGUNTAS Y BOTÓN INICIAR -->
@@ -321,32 +346,91 @@ if(window.GameEngine && GameEngine.broadcastGameMode){
   GameEngine.broadcastGameMode('quiz');
 }
 
+/* CONTROLADOR DE MODALIDADES DE PREGUNTA */
+var qTypeSelect = document.getElementById('qTypeSelect');
+var optsBuilder = document.getElementById('optsBuilder');
+var openAnswerGroup = document.getElementById('openAnswerGroup');
+var optItem2 = document.getElementById('optItem2');
+var optItem3 = document.getElementById('optItem3');
+var opt0Input = document.getElementById('opt0Input');
+var opt1Input = document.getElementById('opt1Input');
+
+if(qTypeSelect){
+  qTypeSelect.addEventListener('change', function(){
+    var val = this.value;
+    if(val === 'boolean'){
+      optsBuilder.style.display = 'grid';
+      openAnswerGroup.style.display = 'none';
+      optItem2.style.display = 'none';
+      optItem3.style.display = 'none';
+      opt0Input.value = 'Verdadero';
+      opt1Input.value = 'Falso';
+      opt0Input.readOnly = true;
+      opt1Input.readOnly = true;
+    } else if(val === 'open'){
+      optsBuilder.style.display = 'none';
+      openAnswerGroup.style.display = 'flex';
+    } else {
+      optsBuilder.style.display = 'grid';
+      openAnswerGroup.style.display = 'none';
+      optItem2.style.display = 'flex';
+      optItem3.style.display = 'flex';
+      opt0Input.readOnly = false;
+      opt1Input.readOnly = false;
+      if(opt0Input.value === 'Verdadero') opt0Input.value = '';
+      if(opt1Input.value === 'Falso') opt1Input.value = '';
+    }
+  });
+}
+
 /* AGREGAR PREGUNTA */
 document.getElementById('addQuestionBtn').addEventListener('click', function(){
+  var qType = qTypeSelect ? qTypeSelect.value : 'multiple';
   var qText = document.getElementById('qTextInput').value.trim();
-  var opt0 = document.getElementById('opt0Input').value.trim();
-  var opt1 = document.getElementById('opt1Input').value.trim();
-  var opt2 = document.getElementById('opt2Input').value.trim();
-  var opt3 = document.getElementById('opt3Input').value.trim();
   var explanation = document.getElementById('qExplanationInput').value.trim();
   var privateNote = document.getElementById('qPrivateNoteInput').value.trim();
-  var correctOpt = parseInt(document.querySelector('input[name="correctOpt"]:checked').value);
 
-  if(!qText || !opt0 || !opt1){ alert('Ingresa el texto de la pregunta y al menos 2 opciones.'); return; }
+  if(!qText){ alert('Por favor ingresa el texto de la pregunta.'); return; }
 
-  questions.push({
+  var newQ = {
+    type: qType,
     question: qText,
-    options: [opt0, opt1, opt2 || '—', opt3 || '—'],
-    correct_index: correctOpt,
     explanation: explanation || '',
     private_note: privateNote || ''
-  });
+  };
+
+  if(qType === 'boolean'){
+    var correctOpt = parseInt(document.querySelector('input[name="correctOpt"]:checked').value);
+    newQ.options = ['Verdadero', 'Falso'];
+    newQ.correct_index = (correctOpt === 1) ? 1 : 0;
+  } else if(qType === 'open'){
+    var openAns = document.getElementById('openAnswerInput').value.trim();
+    newQ.options = [openAns || 'Respuesta Abierta'];
+    newQ.correct_index = 0;
+    newQ.open_answer = openAns;
+  } else {
+    var opt0 = document.getElementById('opt0Input').value.trim();
+    var opt1 = document.getElementById('opt1Input').value.trim();
+    var opt2 = document.getElementById('opt2Input').value.trim();
+    var opt3 = document.getElementById('opt3Input').value.trim();
+    var correctOpt = parseInt(document.querySelector('input[name="correctOpt"]:checked').value);
+
+    if(!opt0 || !opt1){ alert('Ingresa al menos 2 opciones de respuesta.'); return; }
+    newQ.options = [opt0, opt1, opt2 || '—', opt3 || '—'];
+    newQ.correct_index = correctOpt;
+  }
+
+  questions.push(newQ);
 
   document.getElementById('qTextInput').value = '';
-  document.getElementById('opt0Input').value = '';
-  document.getElementById('opt1Input').value = '';
-  document.getElementById('opt2Input').value = '';
-  document.getElementById('opt3Input').value = '';
+  if(qType === 'multiple'){
+    document.getElementById('opt0Input').value = '';
+    document.getElementById('opt1Input').value = '';
+    document.getElementById('opt2Input').value = '';
+    document.getElementById('opt3Input').value = '';
+  } else if(qType === 'open'){
+    document.getElementById('openAnswerInput').value = '';
+  }
   document.getElementById('qExplanationInput').value = '';
   document.getElementById('qPrivateNoteInput').value = '';
 
