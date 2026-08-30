@@ -269,17 +269,6 @@ function showScreen(id) {
     document.getElementById('nameInput').focus();
     return;
   }
-  var lastPin = localStorage.getItem('quiz_latest_pin');
-  if(lastPin && pinInput && !pinInput.value){
-    pinInput.value = lastPin;
-  }
-  if(supabaseClient && pinInput && !pinInput.value){
-    supabaseClient.from('debate_state').select('*').eq('id', 'quiz_active').single().then(function(res){
-      if(res.data && res.data.state && res.data.state.pin){
-        pinInput.value = res.data.state.pin;
-      }
-    });
-  }
 })();
 
 /* JOIN HANDLER */
@@ -289,27 +278,11 @@ document.getElementById('joinBtn').addEventListener('click', function(){
   var errEl = document.getElementById('joinErrMsg');
   errEl.textContent = '';
 
+  if(!pin){ errEl.textContent = 'Por favor ingresa el PIN de la partida.'; document.getElementById('pinInput').focus(); return; }
   if(!name){ errEl.textContent = 'Por favor ingresa tu nombre o apodo.'; document.getElementById('nameInput').focus(); return; }
 
-  // Si no tiene PIN, intentar buscar el PIN de la sesión más reciente
-  if(!pin){
-    pin = localStorage.getItem('quiz_latest_pin') || '';
-  }
-
-  if(!pin && supabaseClient){
-    supabaseClient.from('debate_state').select('*').eq('id', 'quiz_active').single().then(function(res){
-      if(res.data && res.data.state && res.data.state.pin){
-        document.getElementById('pinInput').value = res.data.state.pin;
-        document.getElementById('joinBtn').click();
-      } else {
-        errEl.textContent = 'No hay ninguna partida activa en este momento. Espera a que el tutor inicie el Quiz.';
-      }
-    });
-    return;
-  }
-
-  if(!pin || pin.length < 4){
-    errEl.textContent = 'Ingresa el PIN de la partida o espera que el tutor inicie.';
+  if(pin.length < 4){
+    errEl.textContent = 'El PIN debe tener 4 dígitos.';
     return;
   }
   
