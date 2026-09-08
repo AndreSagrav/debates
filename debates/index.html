@@ -1428,21 +1428,6 @@ function renderParticipants(){
     div.querySelectorAll('.sel-btn').forEach(function(btn){
       btn.addEventListener('click',function(e){
         var id=e.currentTarget.dataset.id,col=e.currentTarget.dataset.col;
-        if(_roundNoteWasPublished){
-          if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
-          if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
-          if(col==='a'){ S.selectedB = null; } else { S.selectedA = null; }
-          S.activeQ = null;
-          S.showQNote = false;
-          _roundNoteWasPublished = false;
-          _timerJustFinished = false;
-          if(timerId){ clearInterval(timerId); timerId = null; }
-          _timerTargetEndTime = null;
-          S.timer.running = false;
-          S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-          S.timer.total = S.timer.remaining;
-          updateTimerUI();
-        }
         if(col==='a'){
           S.selectedA=S.selectedA===id?null:id;
           if(S.selectedA){
@@ -1591,21 +1576,6 @@ function pickForRole(role){
 }
 
 document.getElementById('randABtn').addEventListener('click',function(){
-  if(_roundNoteWasPublished){
-    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
-    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
-    S.selectedB = null;
-    S.activeQ = null;
-    S.showQNote = false;
-    _roundNoteWasPublished = false;
-    _timerJustFinished = false;
-    if(timerId){ clearInterval(timerId); timerId = null; }
-    _timerTargetEndTime = null;
-    S.timer.running = false;
-    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-    S.timer.total = S.timer.remaining;
-    updateTimerUI();
-  }
   var chosen=pickForRole('A');
   if(!chosen) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.roulette();
@@ -1627,21 +1597,6 @@ document.getElementById('randABtn').addEventListener('click',function(){
   }, 1200);
 });
 document.getElementById('randBBtn').addEventListener('click',function(){
-  if(_roundNoteWasPublished){
-    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
-    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
-    S.selectedA = null;
-    S.activeQ = null;
-    S.showQNote = false;
-    _roundNoteWasPublished = false;
-    _timerJustFinished = false;
-    if(timerId){ clearInterval(timerId); timerId = null; }
-    _timerTargetEndTime = null;
-    S.timer.running = false;
-    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-    S.timer.total = S.timer.remaining;
-    updateTimerUI();
-  }
   var chosen=pickForRole('B');
   if(!chosen) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.roulette();
@@ -1699,7 +1654,6 @@ function renderQuestions(){
       if(x){x.text=e.target.value;broadcast();}
     });
     nta.addEventListener('input',function(e){
-      _roundNoteWasPublished = true;
       var x=S.questions.find(function(x){return x.id===e.target.dataset.id;});
       if(x){
         x.note=e.target.value;
@@ -1707,27 +1661,9 @@ function renderQuestions(){
         broadcast();
       }
     });
-    nta.addEventListener('focus',function(){
-      _roundNoteWasPublished = true;
-    });
     div.querySelector('.q-btn-show').addEventListener('click',function(e){
       var id=e.currentTarget.dataset.id;
       var togglingOff = (S.activeQ===id);
-      if(_roundNoteWasPublished){
-        if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
-        if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
-        S.selectedA = null;
-        S.selectedB = null;
-        S.showQNote = false;
-        _roundNoteWasPublished = false;
-        _timerJustFinished = false;
-        if(timerId){ clearInterval(timerId); timerId = null; }
-        _timerTargetEndTime = null;
-        S.timer.running = false;
-        S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-        S.timer.total = S.timer.remaining;
-        updateTimerUI();
-      }
       if(S.activeQ&&S.activeQ!==id){
         var prev=S.questions.find(function(q){return q.id===S.activeQ;});
         if(prev)prev.used=true;
@@ -1753,7 +1689,6 @@ function renderQuestions(){
       } else {
         S.showQNote=!S.showQNote;
       }
-      if(S.showQNote) _roundNoteWasPublished = true;
       renderQuestions();broadcast();
     });
     div.querySelector('.p-rm').addEventListener('click',function(e){
@@ -1805,21 +1740,6 @@ document.getElementById('newQInput').addEventListener('keydown',function(e){
   if(e.key==='Enter') document.getElementById('addQBtn').click();
 });
 document.getElementById('randQBtn').addEventListener('click',function(){
-  if(_roundNoteWasPublished){
-    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
-    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
-    S.selectedA = null;
-    S.selectedB = null;
-    S.showQNote = false;
-    _roundNoteWasPublished = false;
-    _timerJustFinished = false;
-    if(timerId){ clearInterval(timerId); timerId = null; }
-    _timerTargetEndTime = null;
-    S.timer.running = false;
-    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-    S.timer.total = S.timer.remaining;
-    updateTimerUI();
-  }
   // Pool: ALL main (non-reinforcement) questions — independent cycle from reinf
   var mainQs=S.questions.filter(function(q){return !q.reinforcement;});
   if(!mainQs.length) return;
@@ -1848,21 +1768,6 @@ document.getElementById('randQBtn').addEventListener('click',function(){
 });
 
 document.getElementById('randReinfBtn').addEventListener('click',function(){
-  if(_roundNoteWasPublished){
-    if(S.selectedA){ var prevA = S.participants.find(function(p){return p.id===S.selectedA;}); if(prevA) prevA.used=true; }
-    if(S.selectedB){ var prevB = S.participants.find(function(p){return p.id===S.selectedB;}); if(prevB) prevB.used=true; }
-    S.selectedA = null;
-    S.selectedB = null;
-    S.showQNote = false;
-    _roundNoteWasPublished = false;
-    _timerJustFinished = false;
-    if(timerId){ clearInterval(timerId); timerId = null; }
-    _timerTargetEndTime = null;
-    S.timer.running = false;
-    S.timer.remaining = (parseInt(inMin.value)||0)*60+(parseInt(inSec.value)||0);
-    S.timer.total = S.timer.remaining;
-    updateTimerUI();
-  }
   // Pool: ONLY reinforcement questions — independent cycle from main
   var reinfQs=S.questions.filter(function(q){return q.reinforcement;});
   if(!reinfQs.length) return;
