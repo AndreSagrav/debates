@@ -1766,39 +1766,58 @@ function apply(d){
   // 1. Pregunta Activa
   if(!qRouletteRunning){
     var qEl = document.getElementById('pubQuestion');
-    if(qEl && resolvedQ !== pQ){
-      renderQuestion(resolvedQ);
-      pQ = resolvedQ;
+    if(qEl){
+      if(resolvedQ){
+        if(resolvedQ !== pQ || qEl.querySelector('.q-empty') || !qEl.querySelector('.q-p1')){
+          renderQuestion(resolvedQ);
+          pQ = resolvedQ;
+        }
+      } else {
+        if(pQ !== null || !qEl.querySelector('.q-empty')){
+          renderQuestion(null);
+          pQ = null;
+        }
+      }
     }
   }
 
   // 2. Participante A
   if(!rouletteRunningA){
     var nA = document.getElementById('nameA');
-    if(nA && resolvedNameA !== pA){
+    if(nA){
       if(resolvedNameA){
-        nA.textContent = resolvedNameA;
-        nA.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+        if(resolvedNameA !== pA || nA.classList.contains('empty') || nA.textContent !== resolvedNameA){
+          nA.textContent = resolvedNameA;
+          nA.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+          pA = resolvedNameA;
+        }
       } else {
-        nA.textContent = 'Esperando…';
-        nA.classList.add('empty');
+        if(pA !== null || !nA.classList.contains('empty')){
+          nA.textContent = 'Esperando…';
+          nA.classList.add('empty');
+          pA = null;
+        }
       }
-      pA = resolvedNameA;
     }
   }
 
   // 3. Participante B
   if(!rouletteRunningB){
     var nB = document.getElementById('nameB');
-    if(nB && resolvedNameB !== pB){
+    if(nB){
       if(resolvedNameB){
-        nB.textContent = resolvedNameB;
-        nB.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+        if(resolvedNameB !== pB || nB.classList.contains('empty') || nB.textContent !== resolvedNameB){
+          nB.textContent = resolvedNameB;
+          nB.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+          pB = resolvedNameB;
+        }
       } else {
-        nB.textContent = 'Esperando…';
-        nB.classList.add('empty');
+        if(pB !== null || !nB.classList.contains('empty')){
+          nB.textContent = 'Esperando…';
+          nB.classList.add('empty');
+          pB = null;
+        }
       }
-      pB = resolvedNameB;
     }
   }
 
