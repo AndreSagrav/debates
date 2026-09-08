@@ -1594,32 +1594,6 @@ function switchWidgetMode(mode){
 // Ejecutar inmediatamente para asegurar el marco activo desde el milisegundo 0
 switchWidgetMode(currentMode);
 
-var _lastRenderedQText = null;
-function renderQuestion(text){
-  var qEl = document.getElementById('pubQuestion');
-  if(!qEl) return;
-  if(text === _lastRenderedQText) return;
-  _lastRenderedQText = text;
-  if(!text){
-    qEl.innerHTML = '<span class="q-empty">Esperando pregunta…</span>';
-    return;
-  }
-  var raw = String(text);
-  var parts = raw.split(/\n\s*\n/);
-  var html = '';
-  for(var i=0; i<parts.length; i++){
-    var seg = parts[i];
-    if(!seg.trim()) continue;
-    var cls = i === 0 ? 'q-p1' : 'q-p2';
-    html += '<p class="' + cls + '">' + seg.replace(/\n/g, '<br>') + '</p>';
-  }
-  if(!html){
-    qEl.innerHTML = '<span class="q-empty">Esperando pregunta…</span>';
-  } else {
-    qEl.innerHTML = html;
-  }
-}
-
 var _pubTimerInterval = null;
 var _currentRemaining = 0;
 var _currentTotal = 0;
@@ -1784,24 +1758,11 @@ function clearPublicViewForNewRound(){
   if(qnEl) qnEl.textContent = '';
   if(nEl){ nEl.textContent = '—'; nEl.classList.add('dim'); }
 
-  // 2. Limpiar participantes a estado neutral "Esperando…"
-  var nA = document.getElementById('nameA');
-  var nB = document.getElementById('nameB');
-  if(nA){ nA.textContent = 'Esperando…'; nA.classList.add('empty'); nA.classList.remove('roulette', 'slot-land', 'slot-spin', 'name-pop'); }
-  if(nB){ nB.textContent = 'Esperando…'; nB.classList.add('empty'); nB.classList.remove('roulette', 'slot-land', 'slot-spin', 'name-pop'); }
-  pA = null;
-  pB = null;
-
-  // 3. Limpiar pregunta anterior a "Esperando pregunta…"
-  var qEl = document.getElementById('pubQuestion');
-  if(qEl){ qEl.innerHTML = '<span class="q-empty">Esperando pregunta…</span>'; }
-  pQ = null;
-
-  // 4. Quitar overlay de "¡FINALIZADO!"
+  // 2. Quitar overlay de "¡FINALIZADO!"
   var fin = document.getElementById('finOverlay');
   if(fin) fin.classList.remove('show');
 
-  // 5. Restablecer barras de turno
+  // 3. Restablecer barras de turno
   var nameAProg = document.getElementById('nameAProgress');
   var nameBProg = document.getElementById('nameBProgress');
   if(nameAProg) nameAProg.classList.remove('active', 'animating');
