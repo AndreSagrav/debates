@@ -78,6 +78,22 @@
     justify-content: flex-end;
     align-items: center;
   }
+  .sound-toggle-btn {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.25);
+    color: rgba(255,255,255,.85);
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-right: 8px;
+  }
+  .sound-toggle-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
   .fullscreen-btn {
     background: rgba(255,255,255,.1);
     border: 1px solid rgba(255,255,255,.25);
@@ -113,19 +129,41 @@
   }
 
   /* ═══════════════════════════════════════════════════════════
+     WIDGET FRAMES SYSTEM (DEBATES VS TRIVIA EXPRESS VS MINIJUEGOS)
+     ═══════════════════════════════════════════════════════════ */
+  .widget-stage {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  .widget-frame {
+    display: none !important;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .widget-frame.active {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
      1. DEBATES FRAME (DISEÑO EDITORIAL ORIGINAL IDÉNTICO)
      ═══════════════════════════════════════════════════════════ */
   #frame-debates {
     background: var(--deb-bg);
     color: var(--deb-ink);
     height: 100%;
-    display: none !important;
-    grid-template-rows: auto 1fr auto;
-    overflow: hidden;
+    min-height: 100%;
+    justify-content: space-between;
+    overflow-y: auto;
     position: relative;
   }
   #frame-debates.active {
-    display: grid !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   #frame-debates .topbar {
@@ -151,13 +189,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 0;
-    min-height: 85px;
+    padding: 14px 0;
+    min-height: 70px;
     flex-shrink: 0;
   }
   #pubQuestion {
     width: 100%;
-    padding: 0 40px;
+    padding: 0 32px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -166,8 +204,8 @@
   }
   .q-p1 {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(24px, 2.5vw, 34px);
-    line-height: 1.5;
+    font-size: clamp(20px, 2.3vw, 32px);
+    line-height: 1.4;
     color: var(--deb-ink);
     text-align: justify;
     text-justify: inter-word;
@@ -178,8 +216,8 @@
   }
   .q-p2 {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(18px, 1.8vw, 24px);
-    line-height: 1.5;
+    font-size: clamp(16px, 1.6vw, 22px);
+    line-height: 1.4;
     color: var(--deb-ink);
     text-align: justify;
     text-justify: inter-word;
@@ -201,21 +239,21 @@
   #frame-debates .main {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    padding: 16px 32px;
+    padding: 12px 28px;
     align-items: center;
     min-height: 0;
-    gap: 0;
-    flex: 1;
+    gap: 16px;
+    flex: 1 1 auto;
   }
   .name-card {
     background: var(--deb-surf);
     border-radius: 14px;
-    padding: 22px 24px;
+    padding: 16px 20px;
     box-shadow: 0 2px 12px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.06);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 140px;
+    gap: 6px;
+    min-height: 90px;
     justify-content: center;
     position: relative;
     overflow: hidden;
@@ -228,13 +266,13 @@
     letter-spacing: 3px;
     text-transform: uppercase;
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
   .nc-role.a { color: var(--deb-a); }
   .nc-role.b { color: var(--deb-b); }
   .nc-name {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(22px, 3.2vw, 44px);
+    font-size: clamp(20px, 2.8vw, 38px);
     line-height: 1.1;
     color: var(--deb-ink);
     transition: all .3s;
@@ -242,7 +280,7 @@
   .nc-name.empty {
     color: var(--deb-ink3);
     font-style: italic;
-    font-size: clamp(14px, 1.6vw, 20px);
+    font-size: clamp(14px, 1.5vw, 18px);
   }
   .nc-name.roulette {
     color: var(--deb-a);
@@ -253,57 +291,59 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 0 28px;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
   }
   .timer-wrap {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: clamp(150px, 18vw, 195px);
+    height: clamp(150px, 18vw, 195px);
   }
   #arcSvg {
-    width: 200px;
-    height: 200px;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
   }
   #arcBg {
     fill: none;
     stroke: var(--deb-bord);
-    stroke-width: 10;
+    stroke-width: 8;
   }
   #arcProg {
     fill: none;
     stroke: var(--deb-a);
-    stroke-width: 10;
+    stroke-width: 8;
     stroke-linecap: round;
-    transform-origin: center;
+    transform-origin: 120px 120px;
     transform: rotate(-90deg);
     transition: stroke-dashoffset .9s linear, stroke .4s;
   }
   #pubTimer {
     position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     font-family: 'DM Serif Display', serif;
-    font-size: 64px;
-    letter-spacing: -3px;
+    font-size: clamp(38px, 4.4vw, 54px);
+    letter-spacing: -2px;
     color: var(--deb-a);
-    transition: color .4s, font-size .3s;
+    transition: color .4s, transform .2s;
     line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    user-select: none;
+    margin: 0;
+    padding: 0;
   }
   #pubTimer.glow {
     color: var(--deb-orange);
-    animation: glowPulse 1.2s ease-in-out infinite;
-  }
-  @keyframes glowPulse {
-    0%,100%{ text-shadow: 0 0 8px rgba(160,112,64,.4), 0 0 24px rgba(160,112,64,.18); }
-    50%{ text-shadow: 0 0 18px rgba(160,112,64,.85), 0 0 52px rgba(160,112,64,.45); }
   }
   #pubTimer.low {
     color: var(--deb-red);
-    animation: alertPulse .42s ease-in-out infinite;
-  }
-  @keyframes alertPulse {
-    0%,100%{ font-size: 64px; text-shadow: none; }
-    50%{ font-size: 92px; text-shadow: 0 0 28px rgba(192,48,48,.8), 0 0 64px rgba(192,48,48,.4); }
   }
   .vs {
     font-family: 'DM Mono', monospace;
@@ -316,21 +356,23 @@
   #frame-debates .bottom {
     background: var(--deb-surf2);
     border-top: 2px solid var(--deb-bord);
-    padding: 14px 0;
+    padding: 12px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 85px;
-    gap: 6px;
+    min-height: 65px;
+    gap: 4px;
     flex-shrink: 0;
+    width: 100%;
+    z-index: 10;
   }
   .b-row {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
-    padding: 0 40px;
+    padding: 0 32px;
   }
   .b-lbl {
     font-size: 11px;
@@ -340,13 +382,13 @@
     color: var(--deb-ink3);
     white-space: nowrap;
     flex-shrink: 0;
-    padding-top: 4px;
+    padding-top: 2px;
   }
   .b-text {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(18px, 2vw, 24px);
+    font-size: clamp(16px, 1.8vw, 22px);
     color: var(--deb-ink);
-    line-height: 1.5;
+    line-height: 1.4;
     white-space: pre-wrap;
     text-align: justify;
     text-justify: inter-word;
@@ -367,18 +409,18 @@
   #qNoteRow {
     display: none;
     border-top: 1px solid var(--deb-bord);
-    padding-top: 6px;
-    margin-top: 4px;
+    padding-top: 4px;
+    margin-top: 2px;
     width: 100%;
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
   #qNoteRow.show { display: block; }
   #pubQNote {
     font-family: 'DM Serif Display', serif;
-    font-size: clamp(18px, 2vw, 24px);
+    font-size: clamp(16px, 1.8vw, 22px);
     color: var(--deb-ink);
-    line-height: 1.5;
+    line-height: 1.4;
     white-space: pre-wrap;
     text-align: justify;
     text-justify: inter-word;
@@ -513,6 +555,332 @@
   .name-progress.b-active { background: linear-gradient(90deg, transparent, var(--deb-b), transparent); }
   @keyframes nameProgressMove { 0%{ transform: translateX(-100%); } 100%{ transform: translateX(100%); } }
   .name-progress.animating { animation: nameProgressMove 2s linear infinite; }
+
+  /* ── Ruleta Central Escénica (Opción 1) ── */
+  .center-roulette-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 240, 232, 0.82);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease-out;
+  }
+  .center-roulette-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .center-roulette-card {
+    background: #ffffff;
+    border: 2px solid var(--deb-orange);
+    border-radius: 24px;
+    padding: 26px 40px;
+    box-shadow: 0 20px 50px rgba(160, 112, 64, 0.22), 0 0 0 1px rgba(160, 112, 64, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 90%;
+    width: 520px;
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s;
+  }
+  .center-roulette-overlay.show .center-roulette-card {
+    transform: scale(1);
+  }
+  .cr-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--deb-orange);
+    background: rgba(160, 112, 64, 0.12);
+    padding: 5px 16px;
+    border-radius: 99px;
+    border: 1px solid rgba(160, 112, 64, 0.3);
+  }
+  .cr-badge.b {
+    color: var(--deb-b);
+    background: rgba(43, 90, 122, 0.12);
+    border-color: rgba(43, 90, 122, 0.3);
+  }
+  .cr-badge.q {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+  .center-roulette-card.is-question {
+    width: 680px;
+    max-width: 92%;
+  }
+  .center-roulette-card.is-question .cr-drum-wrapper {
+    height: auto;
+    min-height: 85px;
+    max-height: 140px;
+    padding: 6px 0;
+  }
+  .center-roulette-card.is-question .cr-name {
+    font-size: clamp(22px, 3.2vw, 32px);
+    line-height: 1.25;
+  }
+  .cr-drum-wrapper {
+    height: 75px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+  }
+  .cr-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(30px, 4.5vw, 46px);
+    line-height: 1.1;
+    color: var(--deb-ink);
+    letter-spacing: -0.5px;
+    transition: all .15s ease;
+  }
+  .cr-name.spin {
+    animation: slotUp .08s ease both;
+  }
+  .cr-name.winner {
+    animation: winPulse .5s cubic-bezier(.34, 1.56, .64, 1) both;
+    color: var(--deb-orange);
+    text-shadow: 0 0 24px rgba(160, 112, 64, 0.45);
+  }
+  .cr-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--deb-ink3);
+  }
+  @keyframes winPulse {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .center-roulette-card.glide-left {
+    transform: translateX(-35%) scale(0.88);
+    opacity: 0;
+    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
+  }
+  .center-roulette-card.glide-right {
+    transform: translateX(35%) scale(0.88);
+    opacity: 0;
+    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
+  }
+  .center-roulette-card.glide-up {
+    transform: translateY(-42%) scale(0.88);
+    opacity: 0;
+    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .38s ease;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     TRIVIA EXPRESS LIVE STAGE
+     ═══════════════════════════════════════════════════════════ */
+  .quiz-stage-full {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .trivia-lobby-box {
+    background: linear-gradient(135deg, rgba(30,58,138,0.4), rgba(15,23,42,0.8));
+    border: 2px solid #3b82f6;
+    border-radius: 24px;
+    padding: 36px 48px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 650px;
+    width: 90%;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .trivia-pin-huge {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(54px, 10vw, 76px);
+    font-weight: 700;
+    letter-spacing: 8px;
+    color: #60a5fa;
+    text-shadow: 0 0 30px rgba(96,165,250,0.5);
+  }
+  .trivia-q-box {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .trivia-q-header {
+    background: linear-gradient(135deg, #1e1b4b, #0f172a);
+    border: 2px solid #6366f1;
+    border-radius: 20px;
+    padding: 24px 32px;
+    text-align: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 3.5vw, 34px);
+    color: #fff;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .trivia-opts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+  .trivia-opt-card {
+    border-radius: 16px;
+    padding: 18px 24px;
+    font-size: clamp(15px, 2.2vw, 20px);
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    transition: transform .3s ease, border-color .3s;
+  }
+  .trivia-opt-card.opt-a { background: linear-gradient(135deg, #dc2626, #b91c1c); border: 2px solid #ef4444; }
+  .trivia-opt-card.opt-b { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 2px solid #3b82f6; }
+  .trivia-opt-card.opt-c { background: linear-gradient(135deg, #d97706, #b45309); border: 2px solid #f59e0b; }
+  .trivia-opt-card.opt-d { background: linear-gradient(135deg, #059669, #047857); border: 2px solid #10b981; }
+  .trivia-opt-card.correct-highlight {
+    animation: correctPulse 1s infinite alternate;
+    box-shadow: 0 0 35px #10b981;
+    border-color: #34d399 !important;
+  }
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.03); }
+  }
+
+  /* PUBLIC EXPLANATION / NOTA PÚBLICA CARD */
+  .pub-quiz-exp-card {
+    background: linear-gradient(135deg, rgba(30,58,138,0.7), rgba(15,23,42,0.9));
+    border: 2px solid #60a5fa;
+    border-radius: 18px;
+    padding: 18px 26px;
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeIn .4s ease;
+    box-shadow: 0 10px 30px rgba(96,165,250,0.25);
+  }
+  .pq-exp-header {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #93c5fd;
+    text-transform: uppercase;
+  }
+  .pq-exp-body {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(16px, 2vw, 22px);
+    color: #ffffff;
+    line-height: 1.4;
+  }
+
+  /* LIVE SCOREBOARD & QUESTION TIMER */
+  .pub-timer-container {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .pub-timer-track {
+    flex: 1;
+    height: 14px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .pub-timer-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+    border-radius: 999px;
+    transition: width linear;
+  }
+  .pub-timer-digits {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fbbf24;
+    min-width: 45px;
+    text-align: right;
+  }
+
+  /* SCOREBOARD CARD */
+  .pub-scoreboard-card {
+    background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95));
+    border: 2px solid #a855f7;
+    border-radius: 18px;
+    padding: 16px 24px;
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(168,85,247,0.3);
+    animation: fadeIn .3s ease;
+  }
+  .pub-sb-header {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #c084fc;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+  }
+  .pub-sb-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .pub-sb-item {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+  .pub-sb-rank {
+    font-weight: 800;
+    color: #fbbf24;
+    margin-right: 6px;
+  }
+  .pub-sb-pts {
+    font-family: 'DM Mono', monospace;
+    font-weight: 700;
+    color: #34d399;
+  }
 
   /* ═══════════════════════════════════════════════════════════
      OTHER MINI-GAMES FRAMES
@@ -729,6 +1097,224 @@
   .podium-1 { height: 260px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-size: 24px; }
   .podium-2 { height: 200px; background: linear-gradient(135deg, #94a3b8, #64748b); color: #fff; font-size: 20px; }
   .podium-3 { height: 150px; background: linear-gradient(135deg, #b45309, #78350f); color: #fff; font-size: 18px; }
+
+  /* ═══════════════════════════════════════════════════════════
+     RESPONSIVE DESIGN & TABLET / MOBILE OPTIMIZATIONS
+     ═══════════════════════════════════════════════════════════ */
+  @media (max-width: 1100px), (max-height: 850px) {
+    body {
+      height: 100vh;
+      height: 100dvh;
+      overflow-y: auto;
+      user-select: auto;
+    }
+    .widget-stage {
+      flex: 1;
+      height: auto;
+      min-height: calc(100dvh - 42px);
+      overflow: visible;
+    }
+    .pub-header {
+      padding: 0 16px;
+      height: 38px;
+    }
+    .pub-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+    .fullscreen-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+    }
+
+    #frame-debates {
+      height: auto;
+      min-height: calc(100dvh - 38px);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: visible;
+    }
+    #frame-debates.active {
+      display: flex !important;
+    }
+    #frame-debates .q-band {
+      padding: 10px 16px;
+      min-height: 55px;
+      flex-shrink: 0;
+    }
+    #pubQuestion {
+      padding: 0 10px;
+    }
+    .q-p1 {
+      font-size: clamp(17px, 3vw, 24px);
+      line-height: 1.35;
+      text-align: left;
+    }
+    .q-p2 {
+      font-size: clamp(13px, 2.2vw, 18px);
+      line-height: 1.35;
+      text-align: left;
+    }
+    #frame-debates .main {
+      padding: 8px 16px;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .name-card {
+      min-height: clamp(60px, 12vh, 100px);
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .nc-role {
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+    .nc-name {
+      font-size: clamp(18px, 3.5vw, 28px);
+    }
+    .center-col {
+      padding: 2px 8px;
+      gap: 2px;
+    }
+    .timer-wrap {
+      width: clamp(130px, 18vh, 165px);
+      height: clamp(130px, 18vh, 165px);
+    }
+    #arcBg, #arcProg {
+      stroke-width: 8;
+    }
+    #pubTimer {
+      font-size: clamp(32px, 4.5vh, 42px);
+      letter-spacing: -1.5px;
+    }
+    #pubTimer.low {
+      font-size: clamp(32px, 4.5vh, 42px);
+    }
+    .vs {
+      font-size: 8.5px;
+      letter-spacing: 2px;
+    }
+
+    #frame-debates .bottom {
+      padding: 10px 16px;
+      min-height: 55px;
+      flex-shrink: 0;
+      width: 100%;
+      background: var(--deb-surf2);
+      border-top: 2px solid var(--deb-bord);
+      position: relative;
+      z-index: 20;
+    }
+    .b-row {
+      padding: 0;
+      gap: 8px;
+    }
+    .b-lbl {
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+    .b-text {
+      font-size: clamp(13px, 2.5vw, 17px);
+      text-align: left;
+    }
+    #qNoteRow {
+      padding: 4px 0 0 0;
+    }
+    #pubQNote {
+      font-size: clamp(13px, 2.5vw, 17px);
+      text-align: left;
+    }
+
+    /* Mini-games responsive */
+    .millonario-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 12px;
+      overflow-y: auto;
+    }
+    .mill-opts-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .mill-question {
+      font-size: 17px;
+      padding: 14px;
+    }
+    .jeopardy-categories {
+      gap: 4px;
+    }
+    .cat-header-card {
+      font-size: 10px;
+      padding: 6px 2px;
+      letter-spacing: 0;
+    }
+    .jeopardy-cells-grid {
+      gap: 4px;
+    }
+    .jeopardy-cell {
+      font-size: 14px;
+    }
+    .ruleta-letters-container {
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .ruleta-box {
+      width: 32px;
+      height: 42px;
+      font-size: 18px;
+    }
+    .dijeron-answers-list {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    #frame-debates .main {
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+    .name-card {
+      width: 100%;
+      min-height: 60px;
+      padding: 10px 14px;
+    }
+    .nc-name {
+      font-size: clamp(18px, 5vw, 24px);
+    }
+    .center-col {
+      padding: 4px 0;
+      gap: 2px;
+    }
+    .timer-wrap {
+      width: clamp(140px, 38vw, 170px);
+      height: clamp(140px, 38vw, 170px);
+    }
+    #arcBg, #arcProg {
+      stroke-width: 8;
+    }
+    #pubTimer {
+      font-size: clamp(34px, 8.5vw, 42px);
+      letter-spacing: -1.5px;
+    }
+    #pubTimer.low {
+      font-size: clamp(34px, 8.5vw, 42px);
+    }
+    .vs {
+      font-size: 8.5px;
+      letter-spacing: 2px;
+    }
+    .b-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -737,6 +1323,7 @@
   <div class="pub-header-left"></div>
   <div class="pub-title">Actividad de Repaso</div>
   <div class="pub-header-right">
+    <button class="sound-toggle-btn" id="pubSoundBtn" title="Sonido activado (Clic para silenciar)">🔊</button>
     <button class="fullscreen-btn" id="fullBtn">⤢ Pantalla Completa</button>
   </div>
 </header>
@@ -744,7 +1331,7 @@
 <div class="widget-stage">
 
   <!-- 1. DEBATES FRAME (DISEÑO ORIGINAL EDITORIAL EXACTO) -->
-  <div class="widget-frame active" id="frame-debates">
+  <div class="widget-frame" id="frame-debates">
     <div class="q-band"><div id="pubQuestion"><span class="q-empty">Esperando pregunta…</span></div></div>
     <div class="main">
       <div class="name-card a">
@@ -754,9 +1341,9 @@
       </div>
       <div class="center-col">
         <div class="timer-wrap">
-          <svg id="arcSvg" viewBox="0 0 200 200">
-            <circle id="arcBg" cx="100" cy="100" r="85"/>
-            <circle id="arcProg" cx="100" cy="100" r="85"/>
+          <svg id="arcSvg" viewBox="0 0 240 240">
+            <circle id="arcBg" cx="120" cy="120" r="106"/>
+            <circle id="arcProg" cx="120" cy="120" r="106"/>
           </svg>
           <span id="pubTimer">00:00</span>
         </div>
@@ -779,16 +1366,72 @@
       <div id="finText">¡FINALIZADO!</div>
       <div id="finSub">Tiempo agotado</div>
     </div>
+    <!-- 🎲 Ruleta Central Escénica (Opción 1) -->
+    <div class="center-roulette-overlay" id="centerRouletteOverlay">
+      <div class="center-roulette-card" id="centerRouletteCard">
+        <div class="cr-badge" id="crBadge">🎲 Sorteando Participante A</div>
+        <div class="cr-drum-wrapper">
+          <div class="cr-name" id="crName">Sorteando…</div>
+        </div>
+        <div class="cr-sub">Sorteo en vivo</div>
+      </div>
+    </div>
   </div>
 
-  <!-- 2. QUIZ KAHOOT FRAME -->
+  <!-- 2. TRIVIA EXPRESS FRAME -->
   <div class="widget-frame dark-stage" id="frame-quiz">
-    <div class="quiz-stage">
-      <div class="mill-question" id="quizQText">Esperando inicio del Quiz…</div>
-      <div class="quiz-podium-view" id="quizPodiumView">
-        <div class="podium-step podium-2"><span style="font-size:32px;">🥈</span><span id="qPod2">-</span></div>
-        <div class="podium-step podium-1"><span style="font-size:40px;">🥇</span><span id="qPod1">-</span></div>
-        <div class="podium-step podium-3"><span style="font-size:28px;">🥉</span><span id="qPod3">-</span></div>
+    <div class="quiz-stage-full" id="quizStageFull">
+      <!-- LOBBY VIEW -->
+      <div class="trivia-lobby-box" id="quizPubLobby">
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#93c5fd;">🎯 TRIVIA EXPRESS • SALA DE ESPERA</div>
+        <div class="trivia-pin-huge" id="quizPubPin">----</div>
+        <div style="font-size:16px;color:#cbd5e1;">Ingresa desde tu celular a: <strong id="pubLobbyFullUrl" style="color:#60a5fa;word-break:break-all;">debates-pi.vercel.app/play.html</strong></div>
+        <div style="margin-top:6px;font-size:15px;font-weight:700;color:#34d399;" id="quizPubPlayersCount">0 Jugadores conectados</div>
+        <!-- LISTA EN VIVO DE ESTUDIANTES UNIDOS AL LOBBY -->
+        <div id="pubLobbyPlayersGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px;max-height:160px;overflow-y:auto;width:100%;"></div>
+      </div>
+
+      <!-- QUESTION & RESULTS VIEW -->
+      <div class="trivia-q-box" id="quizPubQuestionBox" style="display:none;">
+        <div class="pub-timer-container" id="pubTimerContainer">
+          <div class="pub-timer-track">
+            <div class="pub-timer-fill" id="pubQuizTimerFill"></div>
+          </div>
+          <div class="pub-timer-digits" id="pubQuizTimerDigits">30s</div>
+        </div>
+
+        <div class="trivia-q-header" id="quizPubQText">Pregunta</div>
+        <div class="trivia-opts-grid" id="quizPubOptsGrid">
+          <div class="trivia-opt-card opt-a" id="pubOpt0"><span>▲ A:</span><span class="opt-label" id="pubOpt0Txt">Opción A</span></div>
+          <div class="trivia-opt-card opt-b" id="pubOpt1"><span>◆ B:</span><span class="opt-label" id="pubOpt1Txt">Opción B</span></div>
+          <div class="trivia-opt-card opt-c" id="pubOpt2"><span>● C:</span><span class="opt-label" id="pubOpt2Txt">Opción C</span></div>
+          <div class="trivia-opt-card opt-d" id="pubOpt3"><span>■ D:</span><span class="opt-label" id="pubOpt3Txt">Opción D</span></div>
+        </div>
+
+        <!-- NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA -->
+        <div class="pub-quiz-exp-card" id="pubQuizExpCard" style="display:none;">
+          <div class="pq-exp-header">💡 NOTA PÚBLICA / EXPLICACIÓN PEDAGÓGICA</div>
+          <div class="pq-exp-body" id="pubQuizExpText">—</div>
+        </div>
+
+        <!-- TABLA DE POSICIONES EN VIVO (SCOREBOARD TRAS CADA PREGUNTA) -->
+        <div class="pub-scoreboard-card" id="pubQuizScoreboard" style="display:none;">
+          <div class="pub-sb-header">
+            <span>📊 TABLA DE POSICIONES EN VIVO</span>
+            <span>Ronda Actual</span>
+          </div>
+          <div class="pub-sb-list" id="pubQuizSbList"></div>
+        </div>
+      </div>
+
+      <!-- PODIUM VIEW -->
+      <div class="card" id="quizPubPodiumBox" style="display:none;background:transparent;border:none;align-items:center;">
+        <div style="font-family:'DM Serif Display',serif;font-size:36px;color:#fbbf24;margin-bottom:12px;">🏆 ¡GANADORES DE TRIVIA EXPRESS!</div>
+        <div class="podium" style="width:360px;">
+          <div class="pod-step pod-2"><span style="font-size:32px;">🥈</span><span id="pubPod2Name">-</span></div>
+          <div class="pod-step pod-1"><span style="font-size:44px;">🥇</span><span id="pubPod1Name">-</span></div>
+          <div class="pod-step pod-3"><span style="font-size:28px;">🥉</span><span id="pubPod3Name">-</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -877,7 +1520,7 @@
 /* ═══════════════════════════════════════════════════════════
    DEBATES LOGIC & SYNCHRONIZATION ENGINE
    ═══════════════════════════════════════════════════════════ */
-var CIRC = 2 * Math.PI * 85;
+var CIRC = 2 * Math.PI * 106;
 var arc = document.getElementById('arcProg');
 if(arc){
   arc.style.strokeDasharray = CIRC;
@@ -887,10 +1530,11 @@ if(arc){
 var pA = null, pB = null, pQ = null;
 var rouletteRunningA = false, rouletteRunningB = false, qRouletteRunning = false;
 var currentMode = 'debates';
+var _lockedMode = null; // Si se fuerza modo por URL, no permitir que el polling lo cambie
 
 var modeTitles = {
   debates: '🎤 Debates / Repaso',
-  quiz: '🎯 Quiz Live (Kahoot)',
+  quiz: '🎯 Trivia Express',
   jeopardy: '🏆 Jeopardy Educativo',
   millonario: '💰 ¿Quién Quiere Ser Millonario?',
   ruleta: '🛞 Ruleta de Letras',
@@ -898,9 +1542,25 @@ var modeTitles = {
   batalla: '⚔️ Batalla de Equipos'
 };
 
+// Leer inmediatamente el parámetro ?mode= al inicio del script
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var forceMode = params.get('mode');
+  if(!forceMode){
+    forceMode = localStorage.getItem('active_game_mode') || 'debates';
+  }
+  if(forceMode && modeTitles[forceMode]){
+    _lockedMode = (params.get('mode') ? forceMode : null);
+    currentMode = forceMode;
+  }
+})();
+
 function switchWidgetMode(mode){
   if(!mode || !modeTitles[mode]) return;
+  if(_lockedMode && mode !== _lockedMode) return;
   currentMode = mode;
+  try { localStorage.setItem('active_game_mode', mode); } catch(e){}
+  
   var badge = document.getElementById('pubModeBadge');
   if(badge) badge.textContent = modeTitles[mode];
 
@@ -919,6 +1579,72 @@ function switchWidgetMode(mode){
     document.body.style.background = 'var(--bg-dark)';
     document.body.style.color = 'var(--text-light)';
   }
+}
+
+// Ejecutar inmediatamente para asegurar el marco activo desde el milisegundo 0
+switchWidgetMode(currentMode);
+
+var _pubTimerInterval = null;
+var _currentRemaining = 0;
+var _currentTotal = 0;
+var _isTimerRunning = false;
+var _lastTimerProgress = null;
+
+function renderTimerUI(r, t, isRunning, isDone){
+  var tEl = document.getElementById('pubTimer');
+  if(tEl && arc){
+    var text = String(Math.floor(r/60)).padStart(2, '0') + ':' + String(r%60).padStart(2, '0');
+    if(tEl.textContent !== text) tEl.textContent = text;
+
+    var fin = document.getElementById('finOverlay');
+    if(isDone || (r === 0 && t > 0 && !isRunning)){
+      if(fin && !fin.classList.contains('show')) fin.classList.add('show');
+    } else {
+      if(fin && fin.classList.contains('show')) fin.classList.remove('show');
+    }
+
+    if(r <= 10 && r > 0){
+      if(!tEl.classList.contains('low')) { tEl.classList.add('low'); tEl.classList.remove('glow'); }
+      arc.style.stroke = 'var(--deb-red)';
+    } else if(r <= 30 && r > 10){
+      if(!tEl.classList.contains('glow')) { tEl.classList.add('glow'); tEl.classList.remove('low'); }
+      arc.style.stroke = 'var(--deb-orange)';
+    } else {
+      tEl.classList.remove('low', 'glow');
+      arc.style.stroke = 'var(--deb-a)';
+    }
+
+    var offset = t > 0 ? (CIRC * (1 - Math.max(0, Math.min(1, r/t)))) : 0;
+    if(_lastTimerProgress !== offset){
+      arc.style.strokeDashoffset = offset;
+      _lastTimerProgress = offset;
+    }
+  }
+
+  var nameAProg = document.getElementById('nameAProgress');
+  var nameBProg = document.getElementById('nameBProgress');
+  if(nameAProg && nameBProg){
+    if(r > 0 && t > 0 && isRunning){
+      if(r >= t/2){
+        if(!nameAProg.classList.contains('active')){
+          nameAProg.classList.add('active', 'animating');
+          nameBProg.classList.remove('active', 'animating', 'b-active');
+        }
+      } else {
+        if(!nameBProg.classList.contains('active')){
+          nameBProg.classList.add('active', 'animating', 'b-active');
+          nameAProg.classList.remove('active', 'animating');
+        }
+      }
+    } else {
+      nameAProg.classList.remove('active', 'animating');
+      nameBProg.classList.remove('active', 'animating', 'b-active');
+    }
+  }
+}
+
+function syncPubTimer(r, t, isRunning, isDone, ts, targetEnd){
+  renderTimerUI(r, t, isRunning, isDone);
 }
 
 function renderQuestion(text){
@@ -944,13 +1670,55 @@ function renderQuestion(text){
   }
 }
 
+// ── Estado de finalización y limpieza automática de ronda en Vista Pública ──
+var _publicRoundNotePublished = false;
+var _publishedNoteQId = null;
+var _publishedNameA = null;
+var _publishedNameB = null;
+
+function clearPublicViewForNewRound(){
+  // 1. Limpiar notas públicas de la ronda anterior
+  var qnRow = document.getElementById('qNoteRow');
+  var qnEl = document.getElementById('pubQNote');
+  var nEl = document.getElementById('pubNotes');
+  if(qnRow) qnRow.classList.remove('show');
+  if(qnEl) qnEl.textContent = '';
+  if(nEl){ nEl.textContent = '—'; nEl.classList.add('dim'); }
+
+  // 2. Quitar overlay de "¡FINALIZADO!"
+  var fin = document.getElementById('finOverlay');
+  if(fin) fin.classList.remove('show');
+
+  // 3. Restablecer barras de turno
+  var nameAProg = document.getElementById('nameAProgress');
+  var nameBProg = document.getElementById('nameBProgress');
+  if(nameAProg) nameAProg.classList.remove('active', 'animating');
+  if(nameBProg) nameBProg.classList.remove('active', 'animating', 'b-active');
+}
+
+var _lastAppliedStateTs = 0;
+
 function apply(d){
   if(!d) return;
 
-  // Auto-switch mode si viene especificado
-  if(d.activeMode && d.activeMode !== currentMode){
-    switchWidgetMode(d.activeMode);
+  var msgTs = Number(d.senderTs || d.timerTs || d.ts || 0);
+  if(msgTs > 0){
+    if(_lastAppliedStateTs > 0 && msgTs < _lastAppliedStateTs){
+      return; // Ignorar paquetes desactualizados de la red
+    }
+    _lastAppliedStateTs = msgTs;
   }
+
+  // Si hay un modo forzado por URL (ej. mode=quiz), NUNCA aplicar datos de debates
+  if(_lockedMode && _lockedMode !== 'debates') return;
+
+  // Auto-switch mode si viene especificado
+  if(d.activeMode && !_lockedMode){
+    if(d.activeMode !== currentMode) switchWidgetMode(d.activeMode);
+  }
+
+  // Si la vista está en Trivia Express u otro minijuego, no sobreescribir con datos de debates
+  if(currentMode !== 'debates') return;
 
   // Resolver nombres si vienen como ID o directamente
   var resolvedNameA = d.nameA;
@@ -965,96 +1733,45 @@ function apply(d){
     if(pBObj) resolvedNameB = pBObj.name;
   }
 
-  var resolvedQ = d.questionText || d.activeQ;
-  if(resolvedQ && d.questions && d.activeQ){
-    var qObj = d.questions.find(function(q){ return q.id === d.activeQ; });
-    if(qObj) resolvedQ = qObj.text;
-  }
-
-  // 1. Pregunta Activa
-  if(!qRouletteRunning){
-    var qEl = document.getElementById('pubQuestion');
-    if(qEl && resolvedQ !== pQ){
-      renderQuestion(resolvedQ);
-      pQ = resolvedQ;
-    }
-  }
-
-  // 2. Participante A
-  if(!rouletteRunningA){
-    var nA = document.getElementById('nameA');
-    if(nA && resolvedNameA !== pA){
-      if(resolvedNameA){
-        nA.textContent = resolvedNameA;
-        nA.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
-      } else {
-        nA.textContent = 'Esperando…';
-        nA.classList.add('empty');
-      }
-      pA = resolvedNameA;
-    }
-  }
-
-  // 3. Participante B
-  if(!rouletteRunningB){
-    var nB = document.getElementById('nameB');
-    if(nB && resolvedNameB !== pB){
-      if(resolvedNameB){
-        nB.textContent = resolvedNameB;
-        nB.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
-      } else {
-        nB.textContent = 'Esperando…';
-        nB.classList.add('empty');
-      }
-      pB = resolvedNameB;
-    }
-  }
-
-  // 4. Temporizador y Luces de Progreso
-  var r = d.timerR != null ? d.timerR : 0;
-  var t = d.timerT != null ? d.timerT : 1;
-  var tEl = document.getElementById('pubTimer');
-  if(tEl && arc){
-    tEl.textContent = String(Math.floor(r/60)).padStart(2, '0') + ':' + String(r%60).padStart(2, '0');
-    tEl.classList.remove('glow', 'low');
-    arc.style.stroke = 'var(--deb-a)';
-
-    var fin = document.getElementById('finOverlay');
-    if(d.hasFinished || (r === 0 && t > 0 && d.timerRunning === false)){
-      if(fin) fin.classList.add('show');
+  var resolvedQ = d.questionText || d.activeQText;
+  if(!resolvedQ && d.activeQ){
+    if(d.questions && Array.isArray(d.questions)){
+      var qObj = d.questions.find(function(q){ return q.id === d.activeQ || q.text === d.activeQ; });
+      resolvedQ = qObj ? qObj.text : d.activeQ;
     } else {
-      if(fin) fin.classList.remove('show');
+      resolvedQ = d.activeQ;
     }
-
-    if(r <= 10 && r > 0){
-      tEl.classList.add('low');
-      arc.style.stroke = 'var(--deb-red)';
-    } else if(r <= 30 && r > 10){
-      tEl.classList.add('glow');
-      arc.style.stroke = 'var(--deb-orange)';
-    }
-    arc.style.strokeDashoffset = t > 0 ? (CIRC * (1 - r/t)) : 0;
   }
 
-  var nameAProg = document.getElementById('nameAProgress');
-  var nameBProg = document.getElementById('nameBProgress');
-  if(nameAProg && nameBProg){
-    nameAProg.classList.remove('active', 'animating');
-    nameBProg.classList.remove('active', 'animating', 'b-active');
-    if(r > 0 && t > 0){
-      if(r >= t/2){
-        nameAProg.classList.add('active', 'animating');
-      } else {
-        nameBProg.classList.add('active', 'animating', 'b-active');
-      }
+  // Detección de paso final (publicación de nota pública) vs inicio de nueva ronda
+  var hasNoteContent = (d.activeQNote && d.activeQNote.trim() && (d.showQNote || d.showQNote === undefined)) || (d.notes && d.notes.trim()) || (d.generalNotes && d.generalNotes.trim());
+  
+  if(_publicRoundNotePublished){
+    var isNewQuestion = resolvedQ && resolvedQ !== _publishedNoteQId;
+    var isNewA = resolvedNameA && resolvedNameA !== _publishedNameA;
+    var isNewB = resolvedNameB && resolvedNameB !== _publishedNameB;
+    var noteWasDismissed = (d.showQNote === false && !d.notes && !d.generalNotes);
+    var isTimerRestarted = (d.timerRunning && !d.hasFinished);
+
+    if(isNewQuestion || isNewA || isNewB || noteWasDismissed || isTimerRestarted){
+      _publicRoundNotePublished = false;
+      clearPublicViewForNewRound();
     }
+  }
+
+  if(hasNoteContent && d.showQNote !== false){
+    _publicRoundNotePublished = true;
+    _publishedNoteQId = resolvedQ || d.activeQ;
+    _publishedNameA = resolvedNameA;
+    _publishedNameB = resolvedNameB;
   }
 
   // 5. Notas Públicas
   var nEl = document.getElementById('pubNotes');
   if(nEl){
-    if(d.notes && d.notes.trim()){
-      nEl.textContent = d.notes;
+    var notesVal = (d.notes && d.notes.trim()) ? d.notes : (d.generalNotes && d.generalNotes.trim() ? d.generalNotes : '');
+    if(notesVal){
+      nEl.textContent = notesVal;
       nEl.classList.remove('dim');
     } else {
       nEl.textContent = '—';
@@ -1066,8 +1783,90 @@ function apply(d){
   var qnRow = document.getElementById('qNoteRow');
   var qnEl = document.getElementById('pubQNote');
   if(qnRow && qnEl){
-    if(d.activeQNote && d.showQNote){
-      qnEl.textContent = d.activeQNote;
+    var qnVal = (d.activeQNote && d.activeQNote.trim()) ? d.activeQNote : '';
+    if(qnVal && (d.showQNote || d.showQNote === undefined)){
+      qnEl.textContent = qnVal;
+      qnRow.classList.add('show');
+    } else {
+      qnRow.classList.remove('show');
+    }
+  }
+
+  // 1. Pregunta Activa
+  if(!qRouletteRunning){
+    var qEl = document.getElementById('pubQuestion');
+    if(qEl){
+      if(resolvedQ){
+        if(resolvedQ !== pQ || qEl.querySelector('.q-empty') || !qEl.querySelector('.q-p1')){
+          renderQuestion(resolvedQ);
+          pQ = resolvedQ;
+        }
+      } else {
+        if(pQ !== null || !qEl.querySelector('.q-empty')){
+          renderQuestion(null);
+          pQ = null;
+        }
+      }
+    }
+  }
+
+  // 2. Participante A
+  if(!rouletteRunningA){
+    var nA = document.getElementById('nameA');
+    if(nA){
+      if(resolvedNameA){
+        if(resolvedNameA !== pA || nA.classList.contains('empty') || nA.textContent !== resolvedNameA){
+          nA.textContent = resolvedNameA;
+          nA.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+          pA = resolvedNameA;
+        }
+      } else {
+        if(pA !== null || !nA.classList.contains('empty')){
+          nA.textContent = 'Esperando…';
+          nA.classList.add('empty');
+          pA = null;
+        }
+      }
+    }
+  }
+
+  // 3. Participante B
+  if(!rouletteRunningB){
+    var nB = document.getElementById('nameB');
+    if(nB){
+      if(resolvedNameB){
+        if(resolvedNameB !== pB || nB.classList.contains('empty') || nB.textContent !== resolvedNameB){
+          nB.textContent = resolvedNameB;
+          nB.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin');
+          pB = resolvedNameB;
+        }
+      } else {
+        if(pB !== null || !nB.classList.contains('empty')){
+          nB.textContent = 'Esperando…';
+          nB.classList.add('empty');
+          pB = null;
+        }
+      }
+    }
+  }
+
+  // 4. Temporizador y Sincronización en Tiempo Real
+  var r = d.timerR != null ? d.timerR : 0;
+  var t = d.timerT != null ? d.timerT : 1;
+  var isRunning = !!d.timerRunning;
+  var isDone = !!d.hasFinished;
+
+  syncPubTimer(r, t, isRunning, isDone, d.timerTs, d.timerTargetEnd);
+
+
+
+  // 6. Nota de la Pregunta Activa (sólo si showQNote está activo)
+  var qnRow = document.getElementById('qNoteRow');
+  var qnEl = document.getElementById('pubQNote');
+  if(qnRow && qnEl){
+    var qnVal = (d.activeQNote && d.activeQNote.trim()) ? d.activeQNote : '';
+    if(qnVal && (d.showQNote || d.showQNote === undefined)){
+      qnEl.textContent = qnVal;
       qnRow.classList.add('show');
     } else {
       qnRow.classList.remove('show');
@@ -1075,61 +1874,117 @@ function apply(d){
   }
 }
 
-// Animación de Ruleta de Nombres (Slot Machine con desaceleración y solidez total)
+// Animación de Ruleta de Nombres (Opción 1: Giro Central Espectacular con Aterrizaje)
 function roulette(names, finalName, target){
+  if(_publicRoundNotePublished){
+    _publicRoundNotePublished = false;
+    clearPublicViewForNewRound();
+  }
+
   var isA = target === 'A';
   if(isA) rouletteRunningA = true; else rouletteRunningB = true;
 
-  var elId = isA ? 'nameA' : 'nameB';
-  var el = document.getElementById(elId);
-  var card = el ? el.closest('.name-card') : null;
-  if(!el){
-    if(isA) rouletteRunningA = false; else rouletteRunningB = false;
-    return;
-  }
+  var overlay = document.getElementById('centerRouletteOverlay');
+  var cardModal = document.getElementById('centerRouletteCard');
+  var crBadge = document.getElementById('crBadge');
+  var crName = document.getElementById('crName');
+
+  var targetElId = isA ? 'nameA' : 'nameB';
+  var targetEl = document.getElementById(targetElId);
+  var targetCard = targetEl ? targetEl.closest('.name-card') : null;
 
   var pool = (names && names.length > 0) ? names.slice() : ['Participante 1', 'Participante 2', 'Participante 3', 'Participante 4'];
   if(finalName && pool.indexOf(finalName) === -1) pool.push(finalName);
   while(pool.length < 4) pool = pool.concat(pool);
 
-  el.classList.remove('empty', 'roulette', 'slot-land', 'slot-spin', 'name-pop');
-  if(card){
-    card.classList.add('spinning');
-    if(!isA) card.classList.add('b');
+  if(overlay && cardModal && crName){
+    cardModal.className = 'center-roulette-card';
+    if(crBadge){
+      crBadge.textContent = isA ? '🎲 Sorteando: Participante A (Pregunta)' : '🎲 Sorteando: Participante B (Responde)';
+      crBadge.className = isA ? 'cr-badge' : 'cr-badge b';
+    }
+    crName.className = 'cr-name';
+    crName.textContent = pool[0];
+    overlay.classList.add('show');
   }
 
-  var step = 0, maxSteps = 28, baseDelay = 32;
+  if(targetCard){
+    targetCard.classList.add('spinning');
+    if(!isA) targetCard.classList.add('b');
+  }
+
+  var step = 0, maxSteps = 24, baseDelay = 35;
   function tick(){
-    el.classList.remove('slot-spin', 'slot-land');
-    void el.offsetWidth;
-    el.classList.add('slot-spin');
-    el.textContent = pool[Math.floor(Math.random() * pool.length)];
+    var randName = pool[Math.floor(Math.random() * pool.length)];
+    if(crName){
+      crName.classList.remove('spin');
+      void crName.offsetWidth;
+      crName.classList.add('spin');
+      crName.textContent = randName;
+    }
+    if(targetEl){
+      targetEl.textContent = randName;
+      targetEl.classList.remove('empty');
+    }
+
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 12);
     step++;
+
     if(step < maxSteps){
-      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 520);
+      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 500);
     } else {
-      el.classList.remove('slot-spin');
-      if(card){
-        card.classList.remove('spinning');
-        if(!isA) card.classList.remove('b');
+      // 1. Ganador fijado en el centro con brillo triunfal
+      if(crName){
+        crName.classList.remove('spin');
+        void crName.offsetWidth;
+        crName.classList.add('winner');
+        crName.textContent = finalName || '—';
       }
-      void el.offsetWidth;
-      el.classList.add('slot-land');
-      el.textContent = finalName || '—';
-      el.classList.remove('empty', 'roulette');
-      if(isA) pA = finalName; else pB = finalName;
+      if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteLand();
+
+      // 2. Pausa triunfal de 550ms, luego vuelo a la tarjeta correspondiente
       setTimeout(function(){
-        el.classList.remove('slot-land');
-        if(isA) rouletteRunningA = false; else rouletteRunningB = false;
-      }, 480);
+        if(cardModal){
+          cardModal.classList.add(isA ? 'glide-left' : 'glide-right');
+        }
+        if(targetEl){
+          targetEl.textContent = finalName || '—';
+          targetEl.classList.remove('empty', 'roulette');
+          targetEl.classList.add('name-pop');
+        }
+        if(targetCard){
+          targetCard.classList.remove('spinning');
+          if(!isA) targetCard.classList.remove('b');
+        }
+        if(isA) pA = finalName; else pB = finalName;
+
+        setTimeout(function(){
+          if(overlay) overlay.classList.remove('show');
+          if(cardModal) cardModal.className = 'center-roulette-card';
+          if(targetEl) targetEl.classList.remove('name-pop');
+          if(isA) rouletteRunningA = false; else rouletteRunningB = false;
+        }, 400);
+      }, 550);
     }
   }
+
   tick();
 }
 
-// Animación de Ruleta de Preguntas (Slot Machine con desaceleración y nitidez total)
+// Animación de Ruleta de Preguntas (Opción 1: Giro Central Espectacular con Aterrizaje hacia la Banda Superior)
 function qRoulette(questions, finalQ){
+  if(_publicRoundNotePublished){
+    _publicRoundNotePublished = false;
+    clearPublicViewForNewRound();
+  }
+
   qRouletteRunning = true;
+
+  var overlay = document.getElementById('centerRouletteOverlay');
+  var cardModal = document.getElementById('centerRouletteCard');
+  var crBadge = document.getElementById('crBadge');
+  var crName = document.getElementById('crName');
+
   var band = document.querySelector('#frame-debates .q-band');
   var el = document.getElementById('pubQuestion');
   if(!el){
@@ -1137,7 +1992,6 @@ function qRoulette(questions, finalQ){
     return;
   }
 
-  // Generamos un pool variado para que la ruleta siempre gire visualmente con variedad, incluso si solo hay 1 pregunta de refuerzo
   var dummyTeasers = [
     '¿Cuál es el argumento central de esta tesis?',
     '¿Qué evidencias científicas y datos respaldan la postura?',
@@ -1157,40 +2011,230 @@ function qRoulette(questions, finalQ){
   }
   if(finalQ && pool.indexOf(finalQ) === -1) pool.push(finalQ);
 
+  if(overlay && cardModal && crName){
+    cardModal.className = 'center-roulette-card is-question';
+    if(crBadge){
+      crBadge.textContent = '❓ Sorteando Pregunta del Debate';
+      crBadge.className = 'cr-badge q';
+    }
+    crName.className = 'cr-name';
+    crName.textContent = pool[0];
+    overlay.classList.add('show');
+  }
+
   if(band) band.classList.add('spinning-band');
   el.style.opacity = '1';
 
-  var step = 0, maxSteps = 28, baseDelay = 32;
+  var step = 0, maxSteps = 24, baseDelay = 35;
   function tick(){
-    el.classList.remove('q-slot-spin', 'q-slot-land');
-    void el.offsetWidth;
-    el.classList.add('q-slot-spin');
     var sample = pool[Math.floor(Math.random() * pool.length)];
-    var preview = typeof sample === 'string' ? sample.split('\n')[0].substring(0, 85) : String(sample);
-    el.innerHTML = '<p class="q-p1" style="opacity:1 !important; color:#18181b !important; font-weight:600;">' + preview + (preview.length >= 85 ? '…' : '') + '</p>';
+    var preview = typeof sample === 'string' ? sample.split('\n')[0].substring(0, 95) : String(sample);
+
+    if(crName){
+      crName.classList.remove('spin');
+      void crName.offsetWidth;
+      crName.classList.add('spin');
+      crName.textContent = preview + (preview.length >= 95 ? '…' : '');
+    }
+
+    el.innerHTML = '<p class="q-p1" style="opacity:1 !important; color:#18181b !important; font-weight:600;">' + preview + (preview.length >= 95 ? '…' : '') + '</p>';
+
+    if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteStep(step * 12);
     step++;
+
     if(step < maxSteps){
-      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 540);
+      setTimeout(tick, baseDelay + Math.pow(step/maxSteps, 3.2) * 500);
     } else {
-      if(band) band.classList.remove('spinning-band');
-      el.classList.remove('q-slot-spin');
-      void el.offsetWidth;
-      el.classList.add('q-slot-land');
-      renderQuestion(finalQ);
-      el.style.opacity = '1';
-      pQ = finalQ;
+      // 1. Pregunta fijada en el centro con brillo triunfal
+      var finalPreview = typeof finalQ === 'string' ? finalQ.split('\n')[0].substring(0, 110) : String(finalQ);
+      if(crName){
+        crName.classList.remove('spin');
+        void crName.offsetWidth;
+        crName.classList.add('winner');
+        crName.textContent = finalPreview;
+      }
+      if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.rouletteLand();
+
+      // 2. Pausa de 600ms, luego vuelo hacia arriba a la banda de preguntas
       setTimeout(function(){
-        el.classList.remove('q-slot-land');
-        qRouletteRunning = false;
-      }, 500);
+        if(cardModal){
+          cardModal.classList.add('glide-up');
+        }
+        if(band) band.classList.remove('spinning-band');
+        el.classList.remove('q-slot-spin');
+        void el.offsetWidth;
+        el.classList.add('q-slot-land');
+        renderQuestion(finalQ);
+        el.style.opacity = '1';
+        pQ = finalQ;
+
+        setTimeout(function(){
+          if(overlay) overlay.classList.remove('show');
+          if(cardModal) cardModal.className = 'center-roulette-card';
+          el.classList.remove('q-slot-land');
+          qRouletteRunning = false;
+        }, 420);
+      }, 600);
     }
   }
+
   tick();
 }
 
 /* ═══════════════════════════════════════════════════════════
    EVENT LISTENERS & MULTI-CHANNEL RECEIVERS
    ═══════════════════════════════════════════════════════════ */
+
+var _triviaTimerInterval = null;
+
+function renderPublicTriviaQuiz(s){
+  if(!s) return;
+  if(currentMode !== 'quiz') switchWidgetMode('quiz');
+  var lobby = document.getElementById('quizPubLobby');
+  var qBox = document.getElementById('quizPubQuestionBox');
+  var podBox = document.getElementById('quizPubPodiumBox');
+  var pinEl = document.getElementById('quizPubPin');
+  var plCount = document.getElementById('quizPubPlayersCount');
+  var qText = document.getElementById('quizPubQText');
+  var expCard = document.getElementById('pubQuizExpCard');
+  var expText = document.getElementById('pubQuizExpText');
+  var sbCard = document.getElementById('pubQuizScoreboard');
+  var sbList = document.getElementById('pubQuizSbList');
+  var timerContainer = document.getElementById('pubTimerContainer');
+  var timerFill = document.getElementById('pubQuizTimerFill');
+  var timerDigits = document.getElementById('pubQuizTimerDigits');
+
+  if(pinEl && s.pin) pinEl.textContent = s.pin;
+  if(plCount && s.players) plCount.textContent = s.players.length + ' Jugadores conectados';
+
+  if(s.status === 'lobby'){
+    if(lobby) lobby.style.display = 'flex';
+    if(qBox) qBox.style.display = 'none';
+    if(podBox) podBox.style.display = 'none';
+    if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
+
+    var fullUrlEl = document.getElementById('pubLobbyFullUrl');
+    if(fullUrlEl){
+      var hostUrl = window.location.origin.replace(/^https?:\/\//, '') + window.location.pathname.replace('public-view.html', 'play.html');
+      fullUrlEl.textContent = hostUrl;
+    }
+
+    var lobbyGrid = document.getElementById('pubLobbyPlayersGrid');
+    if(lobbyGrid){
+      lobbyGrid.innerHTML = '';
+      if(s.players && s.players.length > 0){
+        s.players.forEach(function(pl){
+          var chip = document.createElement('div');
+          chip.style.cssText = 'background:#1e293b;border:1px solid #3b82f6;color:#ffffff;border-radius:20px;padding:6px 14px;font-size:14px;font-weight:700;';
+          chip.textContent = '👤 ' + pl.name;
+          lobbyGrid.appendChild(chip);
+        });
+      }
+    }
+
+    if(window.GameEngine && GameEngine.sfx && GameEngine.sfx.playTriviaLobbyMusic){
+      GameEngine.sfx.playTriviaLobbyMusic();
+    }
+  } else if(s.status === 'question' || s.status === 'results'){
+    if(window.GameEngine && GameEngine.sfx && GameEngine.sfx.stopTriviaLobbyMusic){
+      GameEngine.sfx.stopTriviaLobbyMusic();
+    }
+    if(lobby) lobby.style.display = 'none';
+    if(qBox) qBox.style.display = 'flex';
+    if(podBox) podBox.style.display = 'none';
+
+    var curQ = (s.questions && s.questions[s.current_question]) ? s.questions[s.current_question] : null;
+    if(curQ){
+      if(qText) qText.textContent = (s.current_question + 1) + '. ' + curQ.question;
+      var qType = curQ.type || 'multiple';
+      var timeLimit = curQ.time_limit || 30;
+
+      for(var i = 0; i < 4; i++){
+        var optTxtEl = document.getElementById('pubOpt' + i + 'Txt');
+        var optCardEl = document.getElementById('pubOpt' + i);
+        if(optCardEl){
+          if(qType === 'boolean' && i >= 2){
+            optCardEl.style.display = 'none';
+          } else if(curQ.options && i >= curQ.options.length){
+            optCardEl.style.display = 'none';
+          } else {
+            optCardEl.style.display = 'flex';
+          }
+          if(optTxtEl && curQ.options) optTxtEl.textContent = curQ.options[i] || '—';
+          optCardEl.classList.remove('correct-highlight');
+          if(s.status === 'results' && curQ.correct_index === i){
+            optCardEl.classList.add('correct-highlight');
+          }
+        }
+      }
+
+      if(s.status === 'question'){
+        if(timerContainer) timerContainer.style.display = 'flex';
+        if(expCard) expCard.style.display = 'none';
+        if(sbCard) sbCard.style.display = 'none';
+
+        // Temporizador activo
+        if(!_triviaTimerInterval && s.question_start){
+          var startMs = new Date(s.question_start).getTime();
+          _triviaTimerInterval = setInterval(function(){
+            var elapsed = Math.max(0, (Date.now() - startMs) / 1000);
+            var remaining = Math.max(0, timeLimit - elapsed);
+            var pct = (remaining / timeLimit) * 100;
+            if(timerFill) timerFill.style.width = pct + '%';
+            if(timerDigits) timerDigits.textContent = Math.ceil(remaining) + 's';
+            if(remaining <= 0){
+              clearInterval(_triviaTimerInterval);
+              _triviaTimerInterval = null;
+            }
+          }, 100);
+        }
+      } else if(s.status === 'results'){
+        if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
+        if(timerContainer) timerContainer.style.display = 'none';
+
+        // Mostrar Nota Pública / Explicación Pedagógica
+        if(s.show_explanation && curQ.explanation){
+          if(expText) expText.textContent = curQ.explanation;
+          if(expCard) expCard.style.display = 'flex';
+        } else {
+          if(expCard) expCard.style.display = 'none';
+        }
+
+        // Mostrar Tabla de Posiciones de la Ronda (Scoreboard)
+        if(s.players && s.players.length > 0){
+          var sorted = s.players.slice().sort(function(a,b){ return (b.score||0) - (a.score||0); });
+          if(sbList){
+            sbList.innerHTML = '';
+            sorted.slice(0, 6).forEach(function(pl, idx){
+              var item = document.createElement('div');
+              item.className = 'pub-sb-item';
+              var medal = idx === 0 ? '🥇 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : '#' + (idx + 1) + ' '));
+              item.innerHTML = '<span><span class="pub-sb-rank">' + medal + '</span><strong>' + pl.name + '</strong></span><span class="pub-sb-pts">' + (pl.score || 0) + ' pts</span>';
+              sbList.appendChild(item);
+            });
+          }
+          if(sbCard) sbCard.style.display = 'flex';
+        } else {
+          if(sbCard) sbCard.style.display = 'none';
+        }
+      }
+    }
+  } else if(s.status === 'finished'){
+    if(_triviaTimerInterval){ clearInterval(_triviaTimerInterval); _triviaTimerInterval = null; }
+    if(lobby) lobby.style.display = 'none';
+    if(qBox) qBox.style.display = 'none';
+    if(podBox) podBox.style.display = 'flex';
+
+    var players = (s.players || []).slice();
+    players.sort(function(a,b){ return (b.score||0) - (a.score||0); });
+    var p1 = document.getElementById('pubPod1Name');
+    var p2 = document.getElementById('pubPod2Name');
+    var p3 = document.getElementById('pubPod3Name');
+    if(p1) p1.textContent = players[0] ? players[0].name : '-';
+    if(p2) p2.textContent = players[1] ? players[1].name : '-';
+    if(p3) p3.textContent = players[2] ? players[2].name : '-';
+  }
+}
 
 // 1. PostMessage desde la ventana principal
 window.addEventListener('message', function(e){
@@ -1199,6 +2243,7 @@ window.addEventListener('message', function(e){
   if(e.data.type === 'ROULETTE') roulette(e.data.names, e.data.finalName, e.data.target);
   if(e.data.type === 'ROULETTE_Q') qRoulette(e.data.questions, e.data.finalQ);
   if(e.data.type === 'CHANGE_GAME') switchWidgetMode(e.data.mode);
+  if(e.data.type === 'SESSION_UPDATE') renderPublicTriviaQuiz(e.data.session);
 });
 
 // 2. BroadcastChannel para sincronización entre pestañas independientes
@@ -1210,6 +2255,7 @@ if(window.BroadcastChannel){
     if(e.data.type === 'ROULETTE') roulette(e.data.names, e.data.finalName, e.data.target);
     if(e.data.type === 'ROULETTE_Q') qRoulette(e.data.questions, e.data.finalQ);
     if(e.data.type === 'CHANGE_GAME') switchWidgetMode(e.data.mode);
+    if(e.data.type === 'SESSION_UPDATE') renderPublicTriviaQuiz(e.data.session);
   };
 
   var dChan = new BroadcastChannel('debate_channel');
@@ -1223,10 +2269,19 @@ if(window.BroadcastChannel){
 
 // 3. LocalStorage Event Listener
 window.addEventListener('storage', function(e){
+  if(e.key === 'active_game_mode' && e.newValue){
+    switchWidgetMode(e.newValue);
+  }
   if(e.key === 'debate_pub_state' && e.newValue){
     try {
       var p = JSON.parse(e.newValue);
       if(p && p.d) apply(p.d);
+    } catch(_){}
+  }
+  if(e.key === 'trivia_express_active_session' && e.newValue){
+    try {
+      var sess = JSON.parse(e.newValue);
+      if(sess) renderPublicTriviaQuiz(sess);
     } catch(_){}
   }
   if(e.key === 'debate_roulette_event' && e.newValue){
@@ -1268,7 +2323,34 @@ function pullFromOpener(){
 }
 
 function pullFromStorage(){
+  if(_lockedMode === 'quiz' || currentMode === 'quiz'){
+    try{
+      var qRaw = localStorage.getItem('trivia_express_active_session');
+      if(!qRaw){
+        var lp = localStorage.getItem('quiz_latest_pin');
+        if(lp) qRaw = localStorage.getItem('quiz_game_' + lp);
+      }
+      if(qRaw){
+        var qSess = JSON.parse(qRaw);
+        if(qSess) renderPublicTriviaQuiz(qSess);
+      } else {
+        var lp2 = localStorage.getItem('quiz_latest_pin');
+        var pinEl = document.getElementById('quizPubPin');
+        if(lp2 && pinEl && (pinEl.textContent === '----' || !pinEl.textContent)){
+          pinEl.textContent = lp2;
+        }
+      }
+    }catch(e){}
+    return true;
+  }
+
   pullRouletteFromStorage();
+  try{
+    var m = localStorage.getItem('active_game_mode');
+    if(m && m !== currentMode && !_lockedMode){
+      switchWidgetMode(m);
+    }
+  }catch(e){}
   try{
     var raw = localStorage.getItem('debate_pub_state');
     if(raw){
@@ -1337,14 +2419,21 @@ if(window.supabase){
     supabaseClient.channel('universal_public_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'debate_state' }, function(payload){
         if(!payload.new) return;
-        if(payload.new.id === 'default'){
+        if(payload.new.id === 'active_mode'){
+          var m = (payload.new.data && payload.new.data.activeMode) || (payload.new.state && payload.new.state.activeMode);
+          if(m && m !== currentMode) switchWidgetMode(m);
+        } else if(payload.new.id === 'default'){
           var st = payload.new.data || payload.new.state;
-          if(st){
-            if(st.activeMode) switchWidgetMode(st.activeMode);
+          if(st && currentMode === 'debates'){
             apply(st);
           }
+        } else if(payload.new.id === 'quiz_active'){
+          var qSt = payload.new.data || payload.new.state;
+          if(qSt && currentMode === 'quiz'){
+            renderPublicTriviaQuiz(qSt);
+          }
         } else if(payload.new.id === 'debate_roulette'){
-          if(payload.new.data && payload.new.data.payload && payload.new.data.ts && Date.now() - payload.new.data.ts < 3500){
+          if(currentMode === 'debates' && payload.new.data && payload.new.data.payload && payload.new.data.ts && Date.now() - payload.new.data.ts < 3500){
             _lastRouletteTs = payload.new.data.ts;
             var p = payload.new.data.payload;
             if(p.type === 'ROULETTE') roulette(p.names, p.finalName, p.target);
@@ -1356,14 +2445,22 @@ if(window.supabase){
 
     function pullFromSupabaseCloud(){
       if(!supabaseClient) return;
-      supabaseClient.from('debate_state').select('*').in('id', ['default', 'debate_roulette']).then(function(res){
+      supabaseClient.from('debate_state').select('*').in('id', ['default', 'quiz_active', 'active_mode', 'debate_roulette']).then(function(res){
         if(res.data && res.data.length > 0){
           res.data.forEach(function(row){
-            if(row.id === 'default'){
+            if(row.id === 'active_mode'){
+              var m = (row.data && row.data.activeMode) || (row.state && row.state.activeMode);
+              if(m && m !== currentMode) switchWidgetMode(m);
+            } else if(row.id === 'default'){
               var st = row.data || row.state;
-              if(st) apply(st);
+              if(st && currentMode === 'debates') apply(st);
+            } else if(row.id === 'quiz_active'){
+              var qSt = row.data || row.state;
+              if(qSt && currentMode === 'quiz'){
+                renderPublicTriviaQuiz(qSt);
+              }
             } else if(row.id === 'debate_roulette'){
-              if(row.data && row.data.payload && row.data.ts && row.data.ts > _lastRouletteTs && Date.now() - row.data.ts < 3500){
+              if(currentMode === 'debates' && row.data && row.data.payload && row.data.ts && row.data.ts > _lastRouletteTs && Date.now() - row.data.ts < 3500){
                 _lastRouletteTs = row.data.ts;
                 var p = row.data.payload;
                 if(p.type === 'ROULETTE') roulette(p.names, p.finalName, p.target);
@@ -1391,6 +2488,27 @@ if(window.supabase){
     cell.className = 'jeopardy-cell';
     cell.textContent = '$' + val;
     grid.appendChild(cell);
+  }
+})();
+</script>
+<script src="shared-games.js"></script>
+<script>
+(function initPublicSoundControl(){
+  var sndBtn = document.getElementById('pubSoundBtn');
+  if(sndBtn && window.GameEngine){
+    var updateBtnUI = function(){
+      var muted = GameEngine.isMuted();
+      sndBtn.textContent = muted ? '🔇' : '🔊';
+      sndBtn.title = muted ? 'Sonido desactivado (Clic para activar)' : 'Sonido activado (Clic para silenciar)';
+      sndBtn.style.opacity = muted ? '0.6' : '1';
+    };
+    updateBtnUI();
+    sndBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      GameEngine.toggleMute();
+      updateBtnUI();
+      if(!GameEngine.isMuted() && GameEngine.sfx) GameEngine.sfx.click();
+    });
   }
 })();
 </script>

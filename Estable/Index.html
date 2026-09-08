@@ -1442,8 +1442,21 @@ function renderParticipants(){
           S.timer.total = S.timer.remaining;
           updateTimerUI();
         }
-        if(col==='a'){S.selectedA=S.selectedA===id?null:id;if(S.selectedA&&S.selectedB===id)S.selectedB=null;}
-        else{S.selectedB=S.selectedB===id?null:id;if(S.selectedB&&S.selectedA===id)S.selectedA=null;}
+        if(col==='a'){
+          S.selectedA=S.selectedA===id?null:id;
+          if(S.selectedA){
+            var cur=S.participants.find(function(p){return p.id===id;});
+            if(cur){ cur.roleA=true; cur.used=true; }
+            if(S.selectedB===id) S.selectedB=null;
+          }
+        } else {
+          S.selectedB=S.selectedB===id?null:id;
+          if(S.selectedB){
+            var cur=S.participants.find(function(p){return p.id===id;});
+            if(cur){ cur.roleB=true; cur.used=true; }
+            if(S.selectedA===id) S.selectedA=null;
+          }
+        }
         renderParticipants();broadcast();
       });
     });
@@ -1601,6 +1614,7 @@ document.getElementById('randABtn').addEventListener('click',function(){
   }
   S.selectedA=chosen.id;
   chosen.roleA=true;
+  chosen.used=true;
   // Guardia anti-autoenfrentamiento: si el elegido era B, liberar B
   if(S.selectedA === S.selectedB) S.selectedB = null;
   if(S.selectedA && S.selectedB) recordPair(S.selectedA, S.selectedB);
@@ -1636,6 +1650,7 @@ document.getElementById('randBBtn').addEventListener('click',function(){
   }
   S.selectedB=chosen.id;
   chosen.roleB=true;
+  chosen.used=true;
   // Guardia anti-autoenfrentamiento: si el elegido era A, liberar A
   if(S.selectedA === S.selectedB) S.selectedA = null;
   if(S.selectedA && S.selectedB) recordPair(S.selectedA, S.selectedB);
@@ -1723,6 +1738,8 @@ function renderQuestions(){
         S.showQNote=false;
       } else {
         S.activeQ=id;
+        var cur=S.questions.find(function(q){return q.id===id;});
+        if(cur) cur.used=true;
       }
       checkReinforcementUnlock();
       renderQuestions();broadcast();

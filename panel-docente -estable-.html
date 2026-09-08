@@ -601,11 +601,34 @@ function getMsg(){
     nameA: pA?pA.name:null,
     nameB: pB?pB.name:null,
     activeQ: q?q.text:null,
+    questionText: q?q.text:null,
+    activeQText: q?q.text:null,
     activeQNote: q?q.note:null,
     showQNote: S.showQNote,
     timerR: S.timer.remaining, timerT: S.timer.total,
+    timerRunning: !!S.timer.running,
+    senderTs: Date.now(),
+    timerTs: Date.now(),
+    ts: Date.now(),
     notes: ''  // questionNotes son privadas — nunca se envían al público
   };
+}
+
+function broadcastRoulette(payload){
+  if(publicWin&&!publicWin.closed){
+    try { publicWin.postMessage(payload,'*'); }catch(e){}
+  }
+  try {
+    localStorage.setItem('debate_roulette_event', JSON.stringify({p: payload, ts: Date.now()}));
+  } catch(e){}
+  if(window.BroadcastChannel){
+    try {
+      var ch1 = new BroadcastChannel('universal_public_channel');
+      ch1.postMessage(payload);
+      var ch2 = new BroadcastChannel('debate_channel');
+      ch2.postMessage(payload);
+    } catch(e){}
+  }
 }
 
 function updateNotesUI(){
@@ -713,17 +736,22 @@ document.getElementById('openPublicBtn').addEventListener('click',function(){
   if(publicWin&&!publicWin.closed){
     publicWin.focus();
     publicWin.postMessage(getMsg(),'*');
+    writeStateBus();
     return;
   }
-  publicWin = window.open('about:blank','_blank','width=1280,height=720');
-  if(publicWin){
-    try{
-      publicWin.document.open();
-      publicWin.document.write(buildPublicHTML());
-      publicWin.document.close();
-    }catch(e){
-      // Fallback al blob URL si el navegador bloquea document.write
-      publicWin.location.href = URL.createObjectURL(new Blob([buildPublicHTML()],{type:'text/html'}));
+  try {
+    publicWin = window.open('public-view.html','shared_public_window','width=1280,height=720');
+    setTimeout(function(){ writeStateBus(); }, 300);
+  } catch(e){
+    publicWin = window.open('about:blank','_blank','width=1280,height=720');
+    if(publicWin){
+      try{
+        publicWin.document.open();
+        publicWin.document.write(buildPublicHTML());
+        publicWin.document.close();
+      }catch(err){
+        publicWin.location.href = URL.createObjectURL(new Blob([buildPublicHTML()],{type:'text/html'}));
+      }
     }
   }
 });
@@ -899,8 +927,21 @@ function renderParticipants(){
     div.querySelectorAll('.sel-btn').forEach(function(btn){
       btn.addEventListener('click',function(e){
         var id=e.currentTarget.dataset.id,col=e.currentTarget.dataset.col;
-        if(col==='a'){S.selectedA=S.selectedA===id?null:id;if(S.selectedA&&S.selectedB===id)S.selectedB=null;}
-        else{S.selectedB=S.selectedB===id?null:id;if(S.selectedB&&S.selectedA===id)S.selectedA=null;}
+        if(col==='a'){
+          S.selectedA=S.selectedA===id?null:id;
+          if(S.selectedA){
+            var cur=S.participants.find(function(p){return p.id===id;});
+            if(cur){ cur.roleA=true; cur.used=true; }
+            if(S.selectedB===id) S.selectedB=null;
+          }
+        } else {
+          S.selectedB=S.selectedB===id?null:id;
+          if(S.selectedB){
+            var cur=S.participants.find(function(p){return p.id===id;});
+            if(cur){ cur.roleB=true; cur.used=true; }
+            if(S.selectedA===id) S.selectedA=null;
+          }
+        }
         renderParticipants();broadcast();
       });
     });
@@ -1014,10 +1055,11 @@ document.getElementById('randABtn').addEventListener('click',function(){
   }
   S.selectedA=chosen.id;
   chosen.roleA=true;
+  chosen.used=true;
   // Guardia anti-autoenfrentamiento: si el elegido era B, liberar B
   if(S.selectedA === S.selectedB) S.selectedB = null;
   var names=S.participants.map(function(p){return p.name;});
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'},'*');
+  broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'});
   renderParticipants();broadcast();
 });
 document.getElementById('randBBtn').addEventListener('click',function(){
@@ -1029,10 +1071,11 @@ document.getElementById('randBBtn').addEventListener('click',function(){
   }
   S.selectedB=chosen.id;
   chosen.roleB=true;
+  chosen.used=true;
   // Guardia anti-autoenfrentamiento: si el elegido era A, liberar A
   if(S.selectedA === S.selectedB) S.selectedA = null;
   var names=S.participants.map(function(p){return p.name;});
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'},'*');
+  broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'});
   renderParticipants();broadcast();
 });
 
@@ -1094,6 +1137,8 @@ function renderQuestions(){
         S.showQNote=false;
       } else {
         S.activeQ=id;
+        var cur=S.questions.find(function(q){return q.id===id;});
+        if(cur) cur.used=true;
       }
       checkReinforcementUnlock();
       renderQuestions();broadcast();
@@ -1163,11 +1208,12 @@ document.getElementById('randQBtn').addEventListener('click',function(){
   }
   if(!pool.length) return;
   if(S.activeQ){var prev=S.questions.find(function(q){return q.id===S.activeQ;});if(prev)prev.used=true;}
-  S.activeQ=pool[Math.floor(Math.random()*pool.length)].id;
+  var chosenQ=pool[Math.floor(Math.random()*pool.length)];
+  S.activeQ=chosenQ.id;
+  chosenQ.used=true;
   S.showQNote=false;
-  var chosenQ=S.questions.find(function(q){return q.id===S.activeQ;});
   var mainTexts=mainQs.map(function(q){return q.text;}).filter(Boolean);
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ?chosenQ.text:''},'*');
+  broadcastRoulette({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ?chosenQ.text:''});
   checkReinforcementUnlock();renderQuestions();broadcast();
 });
 
@@ -1182,11 +1228,12 @@ document.getElementById('randReinfBtn').addEventListener('click',function(){
   }
   if(!pool.length) return;
   if(S.activeQ){var prev=S.questions.find(function(q){return q.id===S.activeQ;});if(prev)prev.used=true;}
-  S.activeQ=pool[Math.floor(Math.random()*pool.length)].id;
+  var chosenQ=pool[Math.floor(Math.random()*pool.length)];
+  S.activeQ=chosenQ.id;
+  chosenQ.used=true;
   S.showQNote=false;
-  var chosenQ=S.questions.find(function(q){return q.id===S.activeQ;});
   var reinfTexts=reinfQs.map(function(q){return q.text;}).filter(Boolean);
-  if(publicWin&&!publicWin.closed) publicWin.postMessage({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ?chosenQ.text:''},'*');
+  broadcastRoulette({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ?chosenQ.text:''});
   checkReinforcementUnlock();renderQuestions();broadcast();
 });
 

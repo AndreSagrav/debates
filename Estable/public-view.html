@@ -1587,6 +1587,9 @@ switchWidgetMode(currentMode);
 var _pubTimerInterval = null;
 var _currentRemaining = 0;
 var _currentTotal = 0;
+var _isTimerRunning = false;
+var _lastTimerProgress = null;
+
 function renderTimerUI(r, t, isRunning, isDone){
   var tEl = document.getElementById('pubTimer');
   if(tEl && arc){
@@ -1763,6 +1766,32 @@ function apply(d){
     _publishedNameB = resolvedNameB;
   }
 
+  // 5. Notas Públicas
+  var nEl = document.getElementById('pubNotes');
+  if(nEl){
+    var notesVal = (d.notes && d.notes.trim()) ? d.notes : (d.generalNotes && d.generalNotes.trim() ? d.generalNotes : '');
+    if(notesVal){
+      nEl.textContent = notesVal;
+      nEl.classList.remove('dim');
+    } else {
+      nEl.textContent = '—';
+      nEl.classList.add('dim');
+    }
+  }
+
+  // 6. Nota de la Pregunta Activa (sólo si showQNote está activo)
+  var qnRow = document.getElementById('qNoteRow');
+  var qnEl = document.getElementById('pubQNote');
+  if(qnRow && qnEl){
+    var qnVal = (d.activeQNote && d.activeQNote.trim()) ? d.activeQNote : '';
+    if(qnVal && (d.showQNote || d.showQNote === undefined)){
+      qnEl.textContent = qnVal;
+      qnRow.classList.add('show');
+    } else {
+      qnRow.classList.remove('show');
+    }
+  }
+
   // 1. Pregunta Activa
   if(!qRouletteRunning){
     var qEl = document.getElementById('pubQuestion');
@@ -1829,18 +1858,7 @@ function apply(d){
 
   syncPubTimer(r, t, isRunning, isDone, d.timerTs, d.timerTargetEnd);
 
-  // 5. Notas Públicas
-  var nEl = document.getElementById('pubNotes');
-  if(nEl){
-    var notesVal = (d.notes && d.notes.trim()) ? d.notes : (d.generalNotes && d.generalNotes.trim() ? d.generalNotes : '');
-    if(notesVal){
-      nEl.textContent = notesVal;
-      nEl.classList.remove('dim');
-    } else {
-      nEl.textContent = '—';
-      nEl.classList.add('dim');
-    }
-  }
+
 
   // 6. Nota de la Pregunta Activa (sólo si showQNote está activo)
   var qnRow = document.getElementById('qNoteRow');
