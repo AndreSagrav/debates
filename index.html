@@ -688,9 +688,10 @@ function buildPublicHTML(){
         'else{nameBProg.classList.add("active","animating","b-active");}',
       '}',
 
-      'var nEl=document.getElementById("pubNotes");',
-      'if(d.notes&&d.notes.trim()){nEl.textContent=d.notes;nEl.classList.remove("dim");}else{nEl.textContent="\u2014";nEl.classList.add("dim");}',
-
+      'var nEl=document.getElementById("pubNotes");if(nEl){',
+        'var nV=(d.notes&&d.notes.trim())?d.notes:(d.generalNotes&&d.generalNotes.trim()?d.generalNotes:"");',
+        'if(nV){nEl.textContent=nV;nEl.classList.remove("dim");}else{nEl.textContent="\u2014";nEl.classList.add("dim");}',
+      '}',
       'var qnRow=document.getElementById("qNoteRow"),qnEl=document.getElementById("pubQNote");',
       'if(d.activeQNote&&d.showQNote){qnEl.textContent=d.activeQNote;qnRow.classList.add("show");}else{qnRow.classList.remove("show");}',
     '}',

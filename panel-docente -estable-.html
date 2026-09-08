@@ -440,7 +440,7 @@ function buildPublicHTML(){
     '<div class="name-card b"><span class="nc-role b">Responde</span><div class="nc-name empty" id="nameB">Esperando…</div><div class="name-progress" id="nameBProgress"></div></div>',
     '</div>',
     '<div class="bottom">',
-    '<div class="b-row"><span class="b-lbl">Notas del tutor</span><span class="b-text dim" id="pubNotes">\u2014</span></div>',
+
     '<div id="qNoteRow"><div id="pubQNote"></div></div>',
     '</div>',
     '<div id="finOverlay"><div id="finText">\u00a1FINALIZADO!</div><div id="finSub">Tiempo agotado</div></div>',
@@ -507,8 +507,7 @@ function buildPublicHTML(){
         'else{nameBProg.classList.add("active","animating","b-active");}',
       '}',
 
-      'var nEl=document.getElementById("pubNotes");',
-      'if(d.notes&&d.notes.trim()){nEl.textContent=d.notes;nEl.classList.remove("dim");}else{nEl.textContent="\u2014";nEl.classList.add("dim");}',
+
 
       'var qnRow=document.getElementById("qNoteRow"),qnEl=document.getElementById("pubQNote");',
       'if(d.activeQNote&&d.showQNote){qnEl.textContent=d.activeQNote;qnRow.classList.add("show");}else{qnRow.classList.remove("show");}',
