@@ -1534,44 +1534,43 @@ function pickForRole(role){
   var currentId  = role==='A' ? S.selectedA : S.selectedB;
   var roleFlag   = role==='A' ? 'roleA' : 'roleB';
 
-  // Tier 1 — Óptimo: no ha hecho este rol, no es el oponente, no es el actual, y no se han enfrentado
+  if(!S.participants.length) return null;
+  if(S.participants.length === 1) return S.participants[0];
+
+  // 1. Participantes que NO son el opuesto, NO son el actual, y NO han hecho este rol
   var pool = S.participants.filter(function(p){
     return p.id !== oppositeId && p.id !== currentId && !p[roleFlag] && (!oppositeId || !hasPaired(p.id, oppositeId));
   });
 
-  // Tier 2 — Si todos ya se enfrentaron al oponente: priorizar quién no ha hecho este rol
+  // 2. Si no hay con historial limpio, relajar filtro de enfrentamientos previos
   if(!pool.length){
     pool = S.participants.filter(function(p){
       return p.id !== oppositeId && p.id !== currentId && !p[roleFlag];
     });
   }
 
-  // Tier 3 — Ciclo de rol completado (todos ya preguntaron o respondieron): resetear banderas de este rol
+  // 3. Si se agotaron los que no han hecho este rol, resetear la bandera de rol de todos excepto el opuesto
   if(!pool.length){
-    S.participants.forEach(function(p){ p[roleFlag] = false; });
-    pool = S.participants.filter(function(p){
-      return p.id !== oppositeId && p.id !== currentId && (!oppositeId || !hasPaired(p.id, oppositeId));
+    S.participants.forEach(function(p){
+      if(p.id !== oppositeId) p[roleFlag] = false;
     });
-  }
-
-  // Tier 4 — Reset de rol general (excluyendo actual y opuesto)
-  if(!pool.length){
     pool = S.participants.filter(function(p){
       return p.id !== oppositeId && p.id !== currentId;
     });
   }
 
-  // Tier 5 — Swap forzado si sólo hay 2 participantes (A <-> B)
-  if(!pool.length && S.participants.length >= 2){
-    pool = S.participants.filter(function(p){ return p.id !== currentId; });
+  // 4. Si sólo hay 2 participantes y uno es el actual (re-sorteo del mismo rol), permitir al actual pero NUNCA al opuesto
+  if(!pool.length){
+    pool = S.participants.filter(function(p){
+      return p.id !== oppositeId;
+    });
   }
 
-  // Tier 6 — Caso límite (1 solo participante)
-  if(!pool.length && S.participants.length > 0){
+  // 5. Fallback de seguridad
+  if(!pool.length){
     pool = S.participants.slice();
   }
 
-  if(!pool.length) return null;
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
@@ -1579,15 +1578,9 @@ document.getElementById('randABtn').addEventListener('click',function(){
   var chosen=pickForRole('A');
   if(!chosen) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.roulette();
-  if(S.selectedA&&S.selectedA!==chosen.id){
-    var prev=S.participants.find(function(p){return p.id===S.selectedA;});
-    if(prev) prev.used=true;
-  }
   S.selectedA=chosen.id;
   chosen.roleA=true;
   chosen.used=true;
-  // Guardia anti-autoenfrentamiento: si el elegido era B, liberar B
-  if(S.selectedA === S.selectedB) S.selectedB = null;
   if(S.selectedA && S.selectedB) recordPair(S.selectedA, S.selectedB);
   var names=S.participants.map(function(p){return p.name;});
   broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'});
@@ -1600,15 +1593,9 @@ document.getElementById('randBBtn').addEventListener('click',function(){
   var chosen=pickForRole('B');
   if(!chosen) return;
   if(window.GameEngine && GameEngine.sfx) GameEngine.sfx.roulette();
-  if(S.selectedB&&S.selectedB!==chosen.id){
-    var prev=S.participants.find(function(p){return p.id===S.selectedB;});
-    if(prev) prev.used=true;
-  }
   S.selectedB=chosen.id;
   chosen.roleB=true;
   chosen.used=true;
-  // Guardia anti-autoenfrentamiento: si el elegido era A, liberar A
-  if(S.selectedA === S.selectedB) S.selectedA = null;
   if(S.selectedA && S.selectedB) recordPair(S.selectedA, S.selectedB);
   var names=S.participants.map(function(p){return p.name;});
   broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'});

@@ -1018,46 +1018,45 @@ function pickForRole(role){
   var currentId  = role==='A' ? S.selectedA : S.selectedB;
   var roleFlag   = role==='A' ? 'roleA' : 'roleB';
 
-  // Tier 1 — Ideal: no ha hecho este rol, distinto al actual y al opuesto
+  if(!S.participants.length) return null;
+  if(S.participants.length === 1) return S.participants[0];
+
+  // 1. Participantes que NO son el opuesto, NO son el actual, y NO han hecho este rol
   var pool = S.participants.filter(function(p){
     return p.id !== oppositeId && p.id !== currentId && !p[roleFlag];
   });
 
-  // Tier 2 — Ciclo agotado: reset de banderas, excluir actual y opuesto
+  // 2. Si se agotaron los que no han hecho este rol, resetear la bandera de rol de todos excepto el opuesto
   if(!pool.length){
-    S.participants.forEach(function(p){ p[roleFlag] = false; });
+    S.participants.forEach(function(p){
+      if(p.id !== oppositeId) p[roleFlag] = false;
+    });
     pool = S.participants.filter(function(p){
       return p.id !== oppositeId && p.id !== currentId;
     });
   }
 
-  // Tier 3 — Permitir al opuesto (swap), sólo excluir al actual
-  //          Resuelve el caso de 2 participantes sin quedarse pegado
+  // 3. Si sólo hay 2 participantes y uno es el actual (re-sorteo del mismo rol), permitir al actual pero NUNCA al opuesto
   if(!pool.length){
-    pool = S.participants.filter(function(p){ return p.id !== currentId; });
+    pool = S.participants.filter(function(p){
+      return p.id !== oppositeId;
+    });
   }
 
-  // Tier 4 — Último recurso: todos (1 solo participante)
-  if(!pool.length && S.participants.length > 0){
+  // 4. Fallback de seguridad
+  if(!pool.length){
     pool = S.participants.slice();
   }
 
-  if(!pool.length) return null;
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
 document.getElementById('randABtn').addEventListener('click',function(){
   var chosen=pickForRole('A');
   if(!chosen) return;
-  if(S.selectedA&&S.selectedA!==chosen.id){
-    var prev=S.participants.find(function(p){return p.id===S.selectedA;});
-    if(prev) prev.used=true;
-  }
   S.selectedA=chosen.id;
   chosen.roleA=true;
   chosen.used=true;
-  // Guardia anti-autoenfrentamiento: si el elegido era B, liberar B
-  if(S.selectedA === S.selectedB) S.selectedB = null;
   var names=S.participants.map(function(p){return p.name;});
   broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'A'});
   renderParticipants();broadcast();
@@ -1065,15 +1064,9 @@ document.getElementById('randABtn').addEventListener('click',function(){
 document.getElementById('randBBtn').addEventListener('click',function(){
   var chosen=pickForRole('B');
   if(!chosen) return;
-  if(S.selectedB&&S.selectedB!==chosen.id){
-    var prev=S.participants.find(function(p){return p.id===S.selectedB;});
-    if(prev) prev.used=true;
-  }
   S.selectedB=chosen.id;
   chosen.roleB=true;
   chosen.used=true;
-  // Guardia anti-autoenfrentamiento: si el elegido era A, liberar A
-  if(S.selectedA === S.selectedB) S.selectedA = null;
   var names=S.participants.map(function(p){return p.name;});
   broadcastRoulette({type:'ROULETTE',names:names,finalName:chosen.name,target:'B'});
   renderParticipants();broadcast();
