@@ -1204,7 +1204,7 @@ document.getElementById('randQBtn').addEventListener('click',function(){
   var chosenQ=pool[Math.floor(Math.random()*pool.length)];
   S.activeQ=chosenQ.id;
   chosenQ.used=true;
-  S.showQNote=false;
+  S.showQNote=true;
   var mainTexts=mainQs.map(function(q){return q.text;}).filter(Boolean);
   broadcastRoulette({type:'ROULETTE_Q',questions:mainTexts,finalQ:chosenQ?chosenQ.text:''});
   checkReinforcementUnlock();renderQuestions();broadcast();
@@ -1224,7 +1224,7 @@ document.getElementById('randReinfBtn').addEventListener('click',function(){
   var chosenQ=pool[Math.floor(Math.random()*pool.length)];
   S.activeQ=chosenQ.id;
   chosenQ.used=true;
-  S.showQNote=false;
+  S.showQNote=true;
   var reinfTexts=reinfQs.map(function(q){return q.text;}).filter(Boolean);
   broadcastRoulette({type:'ROULETTE_Q',questions:reinfTexts,finalQ:chosenQ?chosenQ.text:''});
   checkReinforcementUnlock();renderQuestions();broadcast();

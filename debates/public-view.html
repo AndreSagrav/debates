@@ -1779,12 +1779,12 @@ function apply(d){
     }
   }
 
-  // 6. Nota de la Pregunta Activa (sólo si showQNote está activo)
+  // 6. Nota de la Pregunta Activa (se muestra siempre que la pregunta tenga nota al pie)
   var qnRow = document.getElementById('qNoteRow');
   var qnEl = document.getElementById('pubQNote');
   if(qnRow && qnEl){
     var qnVal = (d.activeQNote && d.activeQNote.trim()) ? d.activeQNote : '';
-    if(qnVal && (d.showQNote || d.showQNote === undefined)){
+    if(qnVal){
       qnEl.textContent = qnVal;
       qnRow.classList.add('show');
     } else {
