@@ -1693,8 +1693,18 @@ function clearPublicViewForNewRound(){
   if(nameBProg) nameBProg.classList.remove('active', 'animating', 'b-active');
 }
 
+var _lastAppliedStateTs = 0;
+
 function apply(d){
   if(!d) return;
+
+  var msgTs = Number(d.senderTs || d.timerTs || d.ts || 0);
+  if(msgTs > 0){
+    if(_lastAppliedStateTs > 0 && msgTs < _lastAppliedStateTs){
+      return; // Ignorar paquetes desactualizados de la red
+    }
+    _lastAppliedStateTs = msgTs;
+  }
 
   // Si hay un modo forzado por URL (ej. mode=quiz), NUNCA aplicar datos de debates
   if(_lockedMode && _lockedMode !== 'debates') return;
