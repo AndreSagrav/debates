@@ -341,19 +341,9 @@
   }
   #pubTimer.glow {
     color: var(--deb-orange);
-    animation: glowPulse 1.2s ease-in-out infinite;
-  }
-  @keyframes glowPulse {
-    0%,100%{ text-shadow: 0 0 6px rgba(160,112,64,.3), 0 0 18px rgba(160,112,64,.15); }
-    50%{ text-shadow: 0 0 14px rgba(160,112,64,.8), 0 0 36px rgba(160,112,64,.4); }
   }
   #pubTimer.low {
     color: var(--deb-red);
-    animation: alertPulse .5s ease-in-out infinite;
-  }
-  @keyframes alertPulse {
-    0%,100%{ transform: translate(-50%, -50%) scale(1); text-shadow: none; }
-    50%{ transform: translate(-50%, -50%) scale(1.08); text-shadow: 0 0 16px rgba(192,48,48,.7), 0 0 32px rgba(192,48,48,.35); }
   }
   .vs {
     font-family: 'DM Mono', monospace;
@@ -1624,7 +1614,7 @@ function renderTimerUI(r, t, isRunning, isDone){
       arc.style.stroke = 'var(--deb-a)';
     }
 
-    var offset = t > 0 ? (CIRC * (1 - r/t)) : 0;
+    var offset = t > 0 ? (CIRC * (1 - Math.max(0, Math.min(1, r/t)))) : 0;
     if(_lastTimerProgress !== offset){
       arc.style.strokeDashoffset = offset;
       _lastTimerProgress = offset;
@@ -1653,71 +1643,8 @@ function renderTimerUI(r, t, isRunning, isDone){
   }
 }
 
-var _pubTimerInterval = null;
-var _timerTargetEnd = null;
-var _lastDisplayedRemaining = null;
-var _currentTotal = 0;
-
 function syncPubTimer(r, t, isRunning, isDone, ts, targetEnd){
-  _currentTotal = t;
-
-  if(!isRunning){
-    if(_pubTimerInterval){
-      clearInterval(_pubTimerInterval);
-      _pubTimerInterval = null;
-    }
-    _timerTargetEnd = null;
-    _lastDisplayedRemaining = r;
-    renderTimerUI(r, t, false, isDone);
-    return;
-  }
-
-  // Timer está corriendo
-  var calculatedEnd = (typeof targetEnd === 'number' && targetEnd > 0) ? targetEnd : (Date.now() + (r * 1000));
-  if(!targetEnd && ts && typeof ts === 'number'){
-    var age = Date.now() - ts;
-    if(age > 0 && age < 60000){
-      calculatedEnd = ts + (r * 1000);
-    }
-  }
-
-  // Recalibrar si no había timer activo o si hay un desajuste real (> 1000ms)
-  if(!_timerTargetEnd || Math.abs(_timerTargetEnd - calculatedEnd) > 1000){
-    _timerTargetEnd = calculatedEnd;
-  }
-
-  var updateTick = function(){
-    if(!_timerTargetEnd) return;
-    var now = Date.now();
-    var remMs = Math.max(0, _timerTargetEnd - now);
-    var remSec = Math.ceil(remMs / 1000);
-
-    if(remSec !== _lastDisplayedRemaining){
-      _lastDisplayedRemaining = remSec;
-      renderTimerUI(remSec, _currentTotal, true, remSec === 0);
-      if(window.GameEngine && GameEngine.sfx){
-        if(remSec > 0){
-          GameEngine.sfx.tick(remSec <= 10);
-        } else if(remSec === 0){
-          GameEngine.sfx.timeUp();
-        }
-      }
-    }
-
-    if(remSec === 0){
-      if(_pubTimerInterval){
-        clearInterval(_pubTimerInterval);
-        _pubTimerInterval = null;
-      }
-      _timerTargetEnd = null;
-    }
-  };
-
-  updateTick();
-
-  if(!_pubTimerInterval){
-    _pubTimerInterval = setInterval(updateTick, 200);
-  }
+  renderTimerUI(r, t, isRunning, isDone);
 }
 
 function renderQuestion(text){
