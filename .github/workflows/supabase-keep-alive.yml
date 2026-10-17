@@ -2,29 +2,28 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-    - cron: '0 6 */3 * *'
+    - cron: '0 */6 * * *'   # Cada 6 horas
   workflow_dispatch:
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase Database (Cloud Keep-Alive)
+      - name: Ping Supabase Database (lectura + escritura)
         run: |
-          echo "Enviando ping a Supabase..."
-          
-          URL1="https://ksakdjvdqspzwjslzlnb.supabase.co/rest/v1/debate_state?select=id&limit=1"
-          KEY1="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWtkanZkcXNwendqc2x6bG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzUzNjAsImV4cCI6MjEwMTQxMTM2MH0.vWm1Fto7FY8h12xspDgXjn1jOwYY8FzUEmWrP_DOmhA"
-          HTTP_STATUS_1=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $KEY1" -H "Authorization: Bearer $KEY1" "$URL1" || echo "failed")
-          echo "Proyecto 1: HTTP $HTTP_STATUS_1"
+          ping_project () {
+            NAME="$1"; BASE="$2"; KEY="$3"
+            # Escritura (requiere keepalive_setup.sql en ese proyecto; si no, solo avisa)
+            W=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/rest/v1/rpc/ping_keepalive" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}' || echo "failed")
+            # Lectura
+            R=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+              "$BASE/rest/v1/debate_state?select=id&limit=1" || echo "failed")
+            echo "$NAME -> escritura HTTP $W | lectura HTTP $R"
+          }
 
-          URL2="https://hexrnglihkebatlshzmg.supabase.co/rest/v1/debate_state?select=id&limit=1"
-          KEY2="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhleHJuZ2xpaGtlYmF0bHNoem1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDQ1NDMsImV4cCI6MjEwMjQ4MDU0M30.eyfDkc6pVhlkGeI88idWLiXX-hSwI5IST8rzZegbFro"
-          HTTP_STATUS_2=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $KEY2" -H "Authorization: Bearer $KEY2" "$URL2" || echo "failed")
-          echo "Proyecto 2: HTTP $HTTP_STATUS_2"
+          ping_project "Proyecto 1" "https://ksakdjvdqspzwjslzlnb.supabase.co" \
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWtkanZkcXNwendqc2x6bG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzUzNjAsImV4cCI6MjEwMTQxMTM2MH0.vWm1Fto7FY8h12xspDgXjn1jOwYY8FzUEmWrP_DOmhA"
 
-          if [ "$HTTP_STATUS_1" = "200" ] || [ "$HTTP_STATUS_2" = "200" ]; then
-            echo "✅ Supabase se mantiene activo."
-          else
-            echo "⚠️ Restaurar manualmente en https://supabase.com/dashboard si estaba pausado."
-          fi
+          ping_project "Proyecto 2" "https://hexrnglihkebatlshzmg.supabase.co" \
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhleHJuZ2xpaGtlYmF0bHNoem1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDQ1NDMsImV4cCI6MjEwMjQ4MDU0M30.eyfDkc6pVhlkGeI88idWLiXX-hSwI5IST8rzZegbFro"
